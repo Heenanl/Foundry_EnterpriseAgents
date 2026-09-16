@@ -2,7 +2,7 @@
 
 A Foundry **hosted agent** that answers questions grounded in **one SharePoint site**, trimmed to each
 signed-in user's permissions, and publishable to Microsoft Teams on the Foundry auto-bot — no custom
-bot. It reaches SharePoint through the repo's **[MCP-OBO gateway](../../mcp-obo-gateway/README.md)**.
+bot. It reaches SharePoint through the repo's **[OBO gateway](../obo-gateway/README.md)**.
 Agent Framework, Responses protocol.
 
 ## How it works
@@ -30,8 +30,8 @@ auth-transparent (consent + OBO happen server-side, and the gateway call is a se
 ## Prerequisites
 
 1. The **MCP-OBO gateway deployed** and reachable from your Foundry project — see
-   [`../../mcp-obo-gateway/README.md`](../../mcp-obo-gateway/README.md); register its Entra app with
-   [`../../../scripts/Register-GatewayApp.ps1`](../../../scripts/Register-GatewayApp.ps1).
+   [`../obo-gateway/README.md`](../obo-gateway/README.md); register its Entra app with
+   [`Register-GatewayApp.ps1`](../../../../../scripts/Register-GatewayApp.ps1).
 2. An existing Foundry project with a model deployment (e.g. `gpt-4.1`).
 3. **Python 3.12+.**
 4. **Additional Azure resources:** the `SharePointRetrievalOBO` connection + `sharepoint-retrieval-tools`
@@ -124,7 +124,7 @@ Open the agent in Teams, complete the one-time consent, and ask.
 
 ## Next steps
 
-- MCP-OBO gateway (server + setup): [`../../mcp-obo-gateway/README.md`](../../mcp-obo-gateway/README.md)
+- OBO gateway (server + setup): [`../obo-gateway/README.md`](../obo-gateway/README.md)
 - [Microsoft 365 Copilot Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview)
 - [Use a toolbox with a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent)
-- Sibling routes: [`../sharepoint-agent-workiq`](../sharepoint-agent-workiq/README.md) · [`../databricks-agent`](../databricks-agent/README.md)
+- Sibling routes: [`sharepoint-agent-workiq`](../../../sharepoint-agent-workiq/README.md) · [`databricks-agent`](../../../databricks-agent/README.md)

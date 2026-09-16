@@ -1,0 +1,45 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.29/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.29",
+  "version": "1.0.1",
+  "id": "25ffa1fa-0ec4-4311-b4ea-3176e7929434",
+  "developer": {
+    "name": "Azure AI Foundry",
+    "websiteUrl": "https://learn.microsoft.com/azure/ai-foundry/",
+    "privacyUrl": "https://learn.microsoft.com/azure/ai-foundry/",
+    "termsOfUseUrl": "https://learn.microsoft.com/azure/ai-foundry/"
+  },
+  "name": {
+    "short": "SharePoint OBO",
+    "full": "SharePoint OBO (per-user via shared bot)"
+  },
+  "description": {
+    "short": "Per-user SharePoint answers",
+    "full": "Answers from your SharePoint content using your own permissions, via a shared Teams bot in front of a Foundry hosted agent."
+  },
+  "icons": {
+    "color": "default-color-icon.png",
+    "outline": "default-outline-icon.png"
+  },
+  "accentColor": "#4464ee",
+  "validDomains": [
+    "token.botframework.com"
+  ],
+  "webApplicationInfo": {
+    "id": "823ab6d6-efd8-40a9-8d85-a0468e1d7d76",
+    "resource": "api://botid-823ab6d6-efd8-40a9-8d85-a0468e1d7d76"
+  },
+  "bots": [
+    {
+      "botId": "823ab6d6-efd8-40a9-8d85-a0468e1d7d76",
+      "scopes": [
+        "personal",
+        "team",
+        "groupChat"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "supportsChannelFeatures": "tier1"
+}

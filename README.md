@@ -44,10 +44,10 @@ Teams ──► Azure Bot Service ──► APIM (public gateway) ──► Priv
   (`/api/projects/{project}/agents/{agent}/...`) serves **every** agent — configured once.
   Foundry stays private; only APIM's gateway is public. The bridge is **auth-transparent** and
   **version-agnostic** (preserves each bot's `api-version`, injecting a fallback only if missing).
-- **OUTBOUND (optional).** A hosted agent can call out to the **[MCP-OBO gateway](foundryagents/mcp-obo-gateway/README.md)**
+- **OUTBOUND (optional).** A hosted agent can call out to an **[OBO gateway](foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md)**
   via an OAuth2 identity-passthrough connection to reach **SharePoint per-user** through the Copilot
   Retrieval API. This is a **separate leg** from the bridge and only used by the
-  `sharepoint-agent-copilot-retrieval` sample; the Work IQ / Databricks samples use Microsoft-hosted
+  `sharepoint-copilot-retrieval/pathA` sample; the Work IQ / Databricks samples use Microsoft-hosted
   MCP endpoints instead.
 
 ---
@@ -109,9 +109,8 @@ Teams ──► Azure Bot Service ──► APIM (public gateway) ──► Priv
 │
 ├── foundryagents/                      # Agent samples (optional — deploy onto the bridge above)
 │   ├── hostedagent/                    #   sharepoint-agent-workiq · databricks-agent ·
-│   │                                   #   sharepoint-agent-copilot-retrieval
-│   ├── promptagent/                    #   sharepoint-agent-grounding-tool
-│   └── mcp-obo-gateway/                #   per-user OBO gateway for the Copilot Retrieval API
+│   │                                   #   sharepoint-copilot-retrieval/ (pathA Toolbox, pathB shared-bot)
+│   └── promptagent/                    #   sharepoint-agent-grounding-tool
 │
 ├── guides/
 │   └── agent-tool-support-matrix.md    # Which agent/tool for SharePoint access — start here
@@ -129,7 +128,7 @@ ready-to-deploy **agent samples** under [foundryagents/](foundryagents/). To add
 the one-page decision matrix [guides/agent-tool-support-matrix.md](guides/agent-tool-support-matrix.md),
 then open the matching sample's README and run `azd up`:
 
-- **Hosted + Teams + per-user + one SharePoint site** → [mcp-obo-gateway](foundryagents/mcp-obo-gateway/README.md) + [sharepoint-agent-copilot-retrieval](foundryagents/hostedagent/sharepoint-agent-copilot-retrieval/README.md)
+- **Hosted + Teams + per-user + one SharePoint site** → [sharepoint-copilot-retrieval](foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) (pathB shared-bot = verified per-user; pathA Toolbox)
 - **Hosted + Teams, broad M365 (no site scoping)** → [sharepoint-agent-workiq](foundryagents/hostedagent/sharepoint-agent-workiq/README.md)
 - **Prompt agent, site-scoped (not hosted)** → [sharepoint-agent-grounding-tool](foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md)
 

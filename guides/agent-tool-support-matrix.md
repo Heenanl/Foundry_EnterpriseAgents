@@ -8,7 +8,7 @@ Legend: ✅ supported, ❌ not supported, ⚠️ partial, 🧪 preview.
 | 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) 🧪 | Copilot Retrieval API | ✅ | ❌ (app-only) | ✅ as prompt, ❌ hosted | ✅ | one site/folder | Copilot license or Retrieval API paygo | `promptagent/sharepoint-agent-grounding-tool` |
 | 2 | Work IQ (`work_iq_preview`) 🧪 | Work IQ over M365 | ✅ | ✅ | ✅ | ✅ | none (broad M365) | Copilot license or Work IQ paygo | `hostedagent/sharepoint-agent-workiq` |
 | 3 | Databricks Genie (remote MCP) 🧪 | Databricks Genie | ✅ | ✅ | ✅ | ⚠️ shared token, not per-user | Genie space | Databricks | `hostedagent/databricks-agent` |
-| 4 | MCP-OBO gateway (Retrieval API) 🧪 | Copilot Retrieval API | ✅ | ✅ | ✅ | ✅ | site / path / file type / date | Copilot license or Retrieval API paygo | `mcp-obo-gateway` + `hostedagent/sharepoint-agent-copilot-retrieval` |
+| 4 | MCP-OBO gateway (Retrieval API) 🧪 | Copilot Retrieval API | ✅ | ✅ | ✅ | ✅ | site / path / file type / date | Copilot license or Retrieval API paygo | `hostedagent/sharepoint-copilot-retrieval/pathA` |
 | 5 | Basic prompt agent (model only) | model deployment | ✅ | n/a | via publish | n/a | n/a | model only | `promptagent` |
 
 ## What decides the outcome
@@ -27,4 +27,4 @@ scope per site.
 Work IQ, Databricks Genie, and the MCP-OBO gateway all run from a hosted agent on the Foundry auto-bot,
 because they use OAuth2 identity-passthrough where Foundry brokers the per-user token. The MCP-OBO
 gateway applies that to the Copilot Retrieval API with site scoping. See
-[../foundryagents/mcp-obo-gateway/README.md](../foundryagents/mcp-obo-gateway/README.md).
+[../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md).
