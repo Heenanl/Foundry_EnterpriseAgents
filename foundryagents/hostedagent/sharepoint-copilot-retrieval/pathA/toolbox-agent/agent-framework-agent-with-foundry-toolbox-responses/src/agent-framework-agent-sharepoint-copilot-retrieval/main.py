@@ -31,10 +31,7 @@ logger = logging.getLogger(__name__)
 
 # Foundry lowercases forwarded header keys; keep the lookup lowercase.
 CLIENT_USER_TOKEN_HEADER = os.getenv("CLIENT_USER_TOKEN_HEADER", "x-client-user-token").lower()
-GRAPH_SCOPES = [
-    "https://graph.microsoft.com/Files.Read.All",
-    "https://graph.microsoft.com/Sites.Read.All",
-]
+GRAPH_SCOPES = ["https://graph.microsoft.com/.default"]
 RETRIEVAL_URL = os.getenv("RETRIEVAL_API_URL", "https://graph.microsoft.com/v1.0/copilot/retrieval")
 SITE_URL = os.getenv("SHAREPOINT_SITE_URL", "").rstrip("/")
 MAX_RESULTS = int(os.getenv("MAX_RESULTS", "10"))
