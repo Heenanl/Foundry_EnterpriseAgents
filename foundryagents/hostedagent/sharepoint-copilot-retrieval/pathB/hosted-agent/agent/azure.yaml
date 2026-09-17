@@ -40,13 +40,13 @@ services:
         version: 2.0.0
     environmentVariables:
       - name: OBO_CLIENT_ID
-        value: 823ab6d6-efd8-40a9-8d85-a0468e1d7d76
+        value: ${OBO_CLIENT_ID}
       - name: OBO_CLIENT_SECRET
         value: ${OBO_CLIENT_SECRET}
       - name: OBO_TENANT_ID
-        value: 71ab87a2-e73d-4faa-a425-7a824fc24e2d
+        value: ${OBO_TENANT_ID}
       - name: SHAREPOINT_SITE_URL
-        value: https://mngenvmcap512965.sharepoint.com/sites/TestSite
+        value: ${SHAREPOINT_SITE_URL}
       - name: CLIENT_USER_TOKEN_HEADER
         value: x-client-user-token
     container:
