@@ -202,7 +202,14 @@ Run once as a user **with** site access (expect the document) and once **without
 ### 3. Bot + Teams
 Deploy the shared shim bot (`../teams-sso-bot`) as a Container App with the
 Azure Bot + Teams channel + the `teams-sso` OAuth connection above, pointed at this agent's
-Responses endpoint. Sideload the Teams package and chat.
+Responses endpoint. Generate a package bound to your bot/SSO app and sideload it:
+
+```powershell
+cd teams-app
+./New-TeamsAppPackage.ps1 -AppId <obo-app-id>
+```
+
+Upload the generated `appPackage.zip` to Teams and chat.
 
 ---
 

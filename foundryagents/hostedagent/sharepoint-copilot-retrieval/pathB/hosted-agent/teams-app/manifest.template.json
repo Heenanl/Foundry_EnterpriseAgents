@@ -26,12 +26,12 @@
     "token.botframework.com"
   ],
   "webApplicationInfo": {
-    "id": "823ab6d6-efd8-40a9-8d85-a0468e1d7d76",
-    "resource": "api://botid-823ab6d6-efd8-40a9-8d85-a0468e1d7d76"
+    "id": "{{APP_ID}}",
+    "resource": "api://botid-{{APP_ID}}"
   },
   "bots": [
     {
-      "botId": "823ab6d6-efd8-40a9-8d85-a0468e1d7d76",
+      "botId": "{{APP_ID}}",
       "scopes": [
         "personal",
         "team",
