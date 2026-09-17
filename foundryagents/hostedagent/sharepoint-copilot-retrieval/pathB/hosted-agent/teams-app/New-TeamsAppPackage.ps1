@@ -17,7 +17,7 @@ New-Item -ItemType Directory -Path $stagingDirectory | Out-Null
 
 try {
   $manifest = Get-Content (Join-Path $PSScriptRoot "manifest.template.json") -Raw
-  $manifest.Replace("{{APP_ID}}", $AppId) | Set-Content (Join-Path $stagingDirectory "manifest.json") -Encoding utf8NoBOM
+  [System.IO.File]::WriteAllText((Join-Path $stagingDirectory "manifest.json"), $manifest.Replace("{{APP_ID}}", $AppId), [System.Text.UTF8Encoding]::new($false))
   Copy-Item (Join-Path $PSScriptRoot "default-color-icon.png") $stagingDirectory
   Copy-Item (Join-Path $PSScriptRoot "default-outline-icon.png") $stagingDirectory
   Compress-Archive -Path (Join-Path $stagingDirectory "*") -DestinationPath $OutputPath -Force
