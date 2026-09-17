@@ -13,7 +13,7 @@
 
 .NOTES
   Requires: az login (correct tenant), azd >= 1.27.1 with `azd ext install microsoft.foundry`.
-  The gateway must already be deployed (see ../../mcp-obo-gateway/README.md) and its Entra app
+  The gateway must already be deployed (see ../../obo-gateway/README.md) and its Entra app
   registered (scripts/Register-GatewayApp.ps1).
 #>
 [CmdletBinding()]

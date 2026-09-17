@@ -1,7 +1,7 @@
 # Mirrors the `sharepoint-retrieval-tools` toolbox (default version 1) in your Foundry project.
 # Recreate with: azd ai toolbox create sharepoint-retrieval-tools --from-file toolbox.yaml
 #
-# Route for HOSTED agents: the MCP-OBO gateway (this repo's foundryagents/mcp-obo-gateway)
+# Route for HOSTED agents: the OBO gateway (this repo's pathA/obo-gateway)
 # behind a Foundry OAuth2 identity-passthrough connection. On first use the signed-in user
 # approves; Foundry then holds that user's token server-side and forwards it to the gateway,
 # which does the On-Behalf-Of exchange and calls the Microsoft 365 Copilot Retrieval API as

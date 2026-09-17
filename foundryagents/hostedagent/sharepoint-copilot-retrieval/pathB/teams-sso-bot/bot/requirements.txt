@@ -1,0 +1,6 @@
+aiohttp>=3.9
+botbuilder-core>=4.16.2
+botbuilder-dialogs>=4.16.2
+botbuilder-integration-aiohttp>=4.16.2
+azure-identity>=1.17
+httpx>=0.27

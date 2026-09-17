@@ -1,5 +1,9 @@
 agent-framework-foundry
 agent-framework-foundry-hosting>=1.0.0a260630
 
+# On-Behalf-Of exchange of the forwarded user assertion, and the Retrieval API HTTP call.
+msal
+httpx
+
 # debugpy enables local debugging of this agent with the Foundry Toolkit VS Code extension.
 debugpy

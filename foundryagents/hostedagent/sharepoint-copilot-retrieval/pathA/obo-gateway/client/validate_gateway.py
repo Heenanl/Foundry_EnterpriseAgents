@@ -45,9 +45,10 @@ async def main() -> None:
         who = await c.call_tool("whoami", {})
         print("whoami:", who.data)
 
+        query = os.environ.get("QUERY", "What is in this site?")
         try:
-            res = await c.call_tool("sharepoint_retrieve", {"query": "What is in this site?"})
-            print("sharepoint_retrieve:", res.data)
+            res = await c.call_tool("sharepoint_retrieve", {"query": query})
+            print(f"sharepoint_retrieve [{query}]:", res.data)
         except Exception as e:  # noqa: BLE001 - surface the exact downstream failure
             print("sharepoint_retrieve error:", e)
 

@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+# SharePoint per-user retrieval as a Responses-protocol hosted agent (gbelenky pattern):
+# a shared Teams bot forwards the user's delegated token on `x-client-user-token`; this agent
+# does confidential-client OBO in code -> Copilot Retrieval, bypassing Toolbox. No model is
+# invoked (the handler returns retrieved text directly), so no model deployment is declared.
+requiredVersions:
+  extensions:
+    azure.ai.agents: '>=1.0.0-beta.4'
+name: sp-obo-responses
+services:
+  ai-project:
+    host: azure.ai.project
+  sp-obo-responses:
+    host: azure.ai.agent
+    metadata:
+      tags:
+        - AI Agent Hosting
+        - Responses Protocol
+        - Bring Your Own
+        - Python
+        - SharePoint
+        - x-client-user-token OBO
+    project: src/sharepoint-obo-responses
+    language: python
+    codeConfiguration:
+      runtime: python_3_13
+      entryPoint: main.py
+    uses:
+      - ai-project
+    kind: hosted
+    name: sp-obo-responses
+    displayName: SharePoint OBO (Responses, x-client-user-token)
+    description: >
+      Per-user SharePoint retrieval on the Responses protocol. Reads the user's delegated token
+      from the forwarded x-client-user-token header, does confidential-client OBO to Graph, and
+      calls Copilot Retrieval scoped to one site. Toolbox is bypassed so it works when published to Teams.
+    protocols:
+      - protocol: responses
+        version: 2.0.0
+    environmentVariables:
+      - name: OBO_CLIENT_ID
+        value: ${OBO_CLIENT_ID}
+      - name: OBO_CLIENT_SECRET
+        value: ${OBO_CLIENT_SECRET}
+      - name: OBO_TENANT_ID
+        value: ${OBO_TENANT_ID}
+      - name: SHAREPOINT_SITE_URL
+        value: ${SHAREPOINT_SITE_URL}
+      - name: CLIENT_USER_TOKEN_HEADER
+        value: x-client-user-token
+    container:
+      resources:
+        cpu: '0.5'
+        memory: 1Gi
+infra:
+  provider: microsoft.foundry

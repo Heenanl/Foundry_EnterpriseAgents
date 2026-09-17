@@ -49,6 +49,9 @@ param foundryHost string
 @description('Fallback Foundry activity-protocol API version (used only if a bot endpoint omits it).')
 param foundryApiVersion string = '2025-11-15-preview'
 
+@description('Optional: name of the Foundry (Cognitive Services / AIServices) account in this RG. When set, grants the APIM managed identity the custom UserIdentityImpersonation role so the bridge can send x-ms-user-identity for per-user session isolation. Leave empty to skip.')
+param foundryAccountName string = ''
+
 @description('Tags applied to all created resources.')
 param tags object = {}
 
@@ -117,6 +120,18 @@ module apimPolicies 'modules/apim-policies.bicep' = {
   dependsOn: [
     apimConfig
   ]
+}
+
+// ── 6. (Optional) Grant the APIM MI the custom UserIdentityImpersonation role ──
+//    Enables the bridge to send x-ms-user-identity for per-user session isolation.
+//    Only deployed when foundryAccountName is provided.
+module userImpersonationRole 'modules/user-impersonation-role.bicep' = if (!empty(foundryAccountName)) {
+  name: 'deploy-user-impersonation-role'
+  params: {
+    foundryAccountName: foundryAccountName
+    middleTierPrincipalId: apim.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
 }
 
 // ── Outputs ───────────────────────────────────────────────────────────────────

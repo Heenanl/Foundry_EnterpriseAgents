@@ -18,6 +18,7 @@ infra/**/*.json
 .azure/
 **/.azure/
 **/.azd-deploy/
+**/.azd-deploy-*/
 *.log
 last-trace.json
 
