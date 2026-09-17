@@ -15,21 +15,24 @@ Microsoft Teams**, using **one shared bot** (not one per agent) and **no APIM**.
 
 ## Architecture
 
+```mermaid
+flowchart TD
+    U[Teams chat user] -->|activity + silent SSO<br/>signin/tokenExchange| BOT[One shared bot<br/>App Service + Azure Bot registration]
+    BOT -->|Responses call<br/>Authorization: bot MI token<br/>x-client-user-token: user token| HA[Foundry hosted agent<br/>Responses protocol 2.0.0]
+    HA -->|confidential OBO jwt-bearer| E[Entra ID]
+    E -->|delegated Microsoft Graph token| HA
+    HA -->|as the user, site-scoped| RET[(M365 Copilot Retrieval API)]
+    HA -->|synthesize + cite| M[Project model<br/>SYNTH_MODEL, default gpt-4.1]
 ```
-Teams chat
-  -> ONE shared bot  (Azure Container App + Azure Bot registration; real Bot Framework endpoint)
-       - receives Teams activities INCLUDING the SSO signin/tokenExchange (a Foundry hosted
-         agent never does — that is the whole reason the bot exists)
-       - Teams SSO via the Bot OAuth connection -> USER token (aud = the OBO app)
-       - routes to the chosen Foundry agent; calls its Responses endpoint:
-             Authorization: Bearer <bot managed-identity token>   (RBAC: Foundry Agent Consumer on the agent)
-             x-client-user-token: <user token>                    (forwarded unchanged by the gateway)
-  -> Foundry hosted agent  (Responses protocol 2.0.0, bring-your-own container)
-       - reads the user token from context.client_headers['x-client-user-token']  (never from chat text)
-       - confidential-client OBO (jwt-bearer)  ->  delegated Microsoft Graph token
-       - Microsoft 365 Copilot Retrieval API, scoped to ONE SharePoint site  ->  trimmed per user
-       - a project model then synthesizes a concise answer with [n] citations (SYNTH_MODEL, default gpt-4.1)
-```
+
+- The bot receives Teams activities **including** the SSO `signin/tokenExchange` (a Foundry hosted
+  agent never does — that is the whole reason the bot exists); the OAuth connection yields a USER
+  token whose `aud` is the OBO app.
+- The bot authenticates to Foundry with its **own** managed identity (RBAC: **Foundry Agent
+  Consumer** on the agent) and forwards the user token on `x-client-user-token`, which the gateway
+  passes through **unchanged**.
+- The agent reads the token from `context.client_headers['x-client-user-token']` (**never** from
+  chat text), OBOs to a delegated Graph token, and calls Copilot Retrieval scoped to one site.
 
 One bot registration fronts **many** agents (route in-chat or via manifest). It is never per-agent.
 

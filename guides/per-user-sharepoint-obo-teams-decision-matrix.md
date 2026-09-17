@@ -18,6 +18,16 @@ connection** → the **MCP-OBO gateway** → Copilot Retrieval. Foundry renders 
 consent card in Teams and brokers the user's token server-side. Keeps the **Foundry auto-bot** (no
 custom bot); published via the APIM bridge.
 
+```mermaid
+flowchart LR
+    U[Signed-in user] -->|prompt| A[Hosted agent<br/>toolbox-agent]
+    A -->|agent token| TB[Toolbox MCP]
+    TB -->|forwards USER token<br/>OAuth2 passthrough| GW[OBO gateway<br/>obo-gateway]
+    GW -->|OBO exchange| E[Entra ID]
+    GW -->|as the user, site-scoped| RET[(Copilot Retrieval API)]
+    U -.->|first-time OAuth consent| GW
+```
+
 - Repo: [`.../pathA/toolbox-agent`](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/toolbox-agent/README.md) + [`.../pathA/obo-gateway`](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md) (overview: [`pathA/`](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md))
 
 **Observed in testing:** sign-in worked, but **per-user OBO was NOT enforced** — a `whoami` tool
@@ -32,6 +42,17 @@ the hosted agent forwarding the user's token on the **`x-client-user-token`** he
 gateway passes any `x-client-*` header through unchanged). The agent reads it and does a
 **confidential-client OBO in code** → Copilot Retrieval as the user → a model synthesizes a cited
 answer. The Toolbox is bypassed.
+
+```mermaid
+flowchart LR
+    U[Teams user] -->|Activity| BOT[Teams SSO bot<br/>teams-sso-bot]
+    BOT -->|silent SSO<br/>signin/tokenExchange| ABS[Bot Service<br/>teams-sso OAuth conn]
+    ABS -->|user token<br/>aud = OBO app| BOT
+    BOT -->|Responses call<br/>x-client-user-token| HA[Hosted agent<br/>hosted-agent]
+    HA -->|confidential OBO<br/>jwt-bearer| E[Entra ID]
+    HA -->|as the user, site-scoped| RET[(Copilot Retrieval API)]
+    HA -->|synthesize + cite| M[Project model]
+```
 
 - Repo: [`.../pathB/hosted-agent`](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/hosted-agent/README.md) (agent) + [`.../pathB/teams-sso-bot`](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/teams-sso-bot/README.md) (bot) (overview: [`pathB/`](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/README.md))
 

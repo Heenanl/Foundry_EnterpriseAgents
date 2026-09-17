@@ -7,8 +7,9 @@ auto-bot (no custom bot) and publishes via the APIM bridge.
 
 > ⚠️ **Not per-user in testing.** A `whoami` tool returned the **first-consented (admin)** identity
 > even when a different user was chatting, so that user saw the admin's content. Treat this as a
-> **shared-token** result until you verify per-user isolation for your tenant — see the ICM draft in
-> [`docs/ICM-toolbox-shared-token.md`](../../../../docs/ICM-toolbox-shared-token.md).
+> **shared-token** result until you verify per-user isolation for your tenant — see the
+> [decision matrix](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md) for the
+> full comparison and the recommended per-user path (Path B).
 
 ## Architecture
 

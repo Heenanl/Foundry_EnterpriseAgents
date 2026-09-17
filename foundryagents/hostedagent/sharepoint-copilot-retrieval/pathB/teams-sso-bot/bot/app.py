@@ -36,6 +36,10 @@ async def _on_error(context: TurnContext, error: Exception) -> None:
 
 ADAPTER.on_turn_error = _on_error
 
+# Single-instance dev storage. MemoryStorage loses OAuth sign-in and agent-selection state on
+# restart, and across multiple replicas the token-exchange turn can land on a different instance
+# (intermittent sign-in failures). For a scaled/production bot, use durable shared Bot Framework
+# storage (e.g. Azure Blob) or pin the app to a single replica.
 _storage = MemoryStorage()
 _conversation_state = ConversationState(_storage)
 _user_state = UserState(_storage)

@@ -81,39 +81,48 @@ Write-Host "Set requestedAccessTokenVersion=2, signInAudience=AzureADMyOrg"
 $identifierUri = "api://botid-$AppId"
 $currentUris = (az ad app show --id $AppId --query "identifierUris" -o tsv) -split "`n" | Where-Object { $_ }
 if ($currentUris -notcontains $identifierUri) {
-  Patch-App $objectId @{ identifierUris = @($identifierUri) }
-  Write-Host "Set identifierUri $identifierUri"
+  # Merge, don't replace: preserve any URIs other APIs on this app already rely on.
+  $mergedUris = @($currentUris + $identifierUri | Select-Object -Unique)
+  Patch-App $objectId @{ identifierUris = $mergedUris }
+  Write-Host "Added identifierUri $identifierUri (kept existing: $($currentUris -join ', '))"
 } else {
   Write-Host "identifierUri already set ($identifierUri)"
 }
 
-# 3) Expose access_as_user (reuse the scope id if it already exists).
-$scopeId = az ad app show --id $AppId --query "api.oauth2PermissionScopes[?value=='access_as_user'].id | [0]" -o tsv
+# 3) Expose access_as_user (reuse the scope id if it already exists; preserve any other scopes).
+$existingScopes = @(az ad app show --id $AppId --query "api.oauth2PermissionScopes" -o json | ConvertFrom-Json)
+$scopeId = ($existingScopes | Where-Object { $_.value -eq 'access_as_user' } | Select-Object -First 1).id
 if (-not $scopeId) { $scopeId = [guid]::NewGuid().ToString() }
+$accessAsUser = @{
+  id                      = $scopeId
+  value                   = "access_as_user"
+  type                    = "User"
+  isEnabled               = $true
+  adminConsentDisplayName = "Access the Teams agent as the signed-in user"
+  adminConsentDescription = "Allows the Teams agent to act on behalf of the signed-in user."
+  userConsentDisplayName  = "Access the agent on your behalf"
+  userConsentDescription  = "Allows the agent to act on your behalf."
+}
+$otherScopes = @($existingScopes | Where-Object { $_.value -ne 'access_as_user' })
 Patch-App $objectId @{
   api = @{
     requestedAccessTokenVersion = 2
-    oauth2PermissionScopes = @(@{
-      id                      = $scopeId
-      value                   = "access_as_user"
-      type                    = "User"
-      isEnabled               = $true
-      adminConsentDisplayName = "Access the Teams agent as the signed-in user"
-      adminConsentDescription = "Allows the Teams agent to act on behalf of the signed-in user."
-      userConsentDisplayName  = "Access the agent on your behalf"
-      userConsentDescription  = "Allows the agent to act on your behalf."
-    })
+    oauth2PermissionScopes = @($otherScopes + $accessAsUser)
   }
 }
 Write-Host "Exposed scope access_as_user ($scopeId)"
 
 # 4) Pre-authorize the Teams first-party clients for that scope (SEPARATE PATCH; validated
-#    against scopes that already exist, so must run after the scope is created).
+#    against scopes that already exist, so must run after the scope is created). Merge so any
+#    other pre-authorized clients (e.g. Azure CLI for the harness) are preserved.
+$existingPreauth = @(az ad app show --id $AppId --query "api.preAuthorizedApplications" -o json | ConvertFrom-Json)
+$teamsClientIds = @($TeamsDesktopMobile, $TeamsWeb)
+$otherPreauth = @($existingPreauth | Where-Object { $teamsClientIds -notcontains $_.appId })
 Patch-App $objectId @{
-  api = @{ preAuthorizedApplications = @(
+  api = @{ preAuthorizedApplications = @($otherPreauth + @(
     @{ appId = $TeamsDesktopMobile; delegatedPermissionIds = @($scopeId) },
     @{ appId = $TeamsWeb;           delegatedPermissionIds = @($scopeId) }
-  ) }
+  )) }
 }
 Write-Host "Pre-authorized Teams desktop/mobile + web clients"
 
@@ -141,15 +150,21 @@ if ($DownstreamResourceAppId -and $DownstreamScopeId) {
   $existing = az ad app show --id $AppId --query "requiredResourceAccess" -o json | ConvertFrom-Json
   $list = @()
   if ($existing) { $list = @($existing) }
-  if (-not ($list | Where-Object { $_.resourceAppId -eq $DownstreamResourceAppId })) {
+  $entry = $list | Where-Object { $_.resourceAppId -eq $DownstreamResourceAppId } | Select-Object -First 1
+  if (-not $entry) {
     $list += @{
       resourceAppId  = $DownstreamResourceAppId
       resourceAccess = @(@{ id = $DownstreamScopeId; type = "Scope" })
     }
     Patch-App $objectId @{ requiredResourceAccess = $list }
     Write-Host "Granted downstream delegated permission $DownstreamResourceAppId/$DownstreamScopeId"
+  } elseif (-not ($entry.resourceAccess | Where-Object { $_.id -eq $DownstreamScopeId })) {
+    # Resource already present but missing this scope: add it rather than silently skipping.
+    $entry.resourceAccess = @($entry.resourceAccess + @{ id = $DownstreamScopeId; type = "Scope" })
+    Patch-App $objectId @{ requiredResourceAccess = $list }
+    Write-Host "Added scope $DownstreamScopeId to existing downstream resource $DownstreamResourceAppId"
   } else {
-    Write-Host "Downstream resource $DownstreamResourceAppId already present"
+    Write-Host "Downstream resource $DownstreamResourceAppId/$DownstreamScopeId already present"
   }
 }
 

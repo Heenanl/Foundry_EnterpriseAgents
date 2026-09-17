@@ -82,7 +82,10 @@ def main() -> None:
     agent = os.environ.get("AGENT_NAME", "sp-obo-responses")
     query = os.environ.get("QUERY", "windows byod")
 
-    user_token = _device_code_token(tenant, f"api://{obo_app}/access_as_user")
+    # Match the resource URI Configure-TeamsSso-App.ps1 exposes (api://botid-<appId>); override
+    # with SSO_APP_RESOURCE if your app exposes a different identifier URI for access_as_user.
+    sso_resource = os.environ.get("SSO_APP_RESOURCE", f"api://botid-{obo_app}")
+    user_token = _device_code_token(tenant, f"{sso_resource}/access_as_user")
     c = _claims(user_token)
     print(f"USER token -> upn={c.get('upn') or c.get('preferred_username')} oid={c.get('oid')} "
           f"scp={c.get('scp')} aud={c.get('aud')}")
