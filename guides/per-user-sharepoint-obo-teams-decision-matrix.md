@@ -107,16 +107,18 @@ Feedback from the Foundry engineering team on exactly these scenarios:
 - **Native Teams/M365 SSO is in progress — ~4–6 weeks out, top priority.** It will "naturally connect
   to tool OAuth," i.e. a Foundry hosted agent published to Teams will get a full user SSO flow without
   a custom bot. **Both paths here are interim**; once native SSO lands, Path B's custom bot becomes
-  unnecessary for most cases and Path A's Toolbox OAuth connects to it directly.
+  unnecessary for most cases and Path A's Toolbox OAuth connects to it directly — **this is the change
+  expected to make Path A genuinely per-user** (still verify against the token-caching bug below).
 - **The token-sharing behavior in Path A is a bug, not by design.** The team's guidance: *"if we're
   incorrectly caching tokens [different Teams users getting the same response], please file an ICM."*
   Our observation (a `whoami` returning the admin/first-consented identity for a different user) is
   exactly this — **file an ICM** rather than treating it as expected.
-- **RBAC may be avoidable.** The team states RBAC should **not** be required when the agent's endpoint
-  uses the **`BotServiceTenant`** auth policy (tenant-wide access) — *"if that's happening, file an
-  ICM."* Also, *"agents can automatically access project resources within their own namespace, so you
-  don't need RBAC to call models."* So the model-inference role we assigned may become unnecessary;
-  if a `401` persists for in-namespace resources, that's ICM-worthy too.
+- **RBAC may be avoidable — but wasn't in testing.** PG says role assignments should be avoidable using
+  the **`BotServiceRbac`** (tenant-wide access) auth policy. In our testing, however, RBAC was **still
+  required** after setting `BotServiceRbac`/`BotServiceTenant` — so this is unresolved; **file an ICM**.
+  PG also notes agents can access project resources in their **own namespace** without RBAC to call
+  models, so the model-inference role we assigned may become unnecessary; a persistent `401` for
+  in-namespace resources is ICM-worthy too.
 - **Known gaps being worked on:** response **streaming / progress indicators** in Teams (protocol
   limits for long-running requests), and **Code Interpreter file download/upload** from Teams (no
   native `/files` ↔ Activity Protocol bridge yet).
