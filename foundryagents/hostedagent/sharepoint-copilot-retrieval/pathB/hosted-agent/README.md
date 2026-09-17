@@ -205,7 +205,7 @@ Azure Bot + Teams channel + the `teams-sso` OAuth connection above, pointed at t
 Responses endpoint. Generate a package bound to your bot/SSO app and sideload it:
 
 ```powershell
-cd teams-app
+cd ..\teams-app
 ./New-TeamsAppPackage.ps1 -AppId <obo-app-id>
 ```
 
