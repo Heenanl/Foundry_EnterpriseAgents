@@ -6,11 +6,10 @@ Flow per user message:
      SILENT SSO (``signin/tokenExchange``). With the SSO app configured correctly
      (scripts/Configure-TeamsSso-App.ps1) no consent card appears.
   2. The prompt yields the user's delegated token (aud = SSO/OBO app, scope access_as_user).
-  3. The bot calls the hosted agent with that token as ``x-client-user-token`` and the user's
-     object id as ``x-ms-user-identity`` (see agent_client.py), and returns the answer.
+  3. The bot calls the hosted agent with that token as ``x-client-user-token`` (see agent_client.py)
+     and returns the answer.
 
-The bot stores no user tokens; Bot Service holds the OAuth token cache. Only the user's object id
-is read from the activity for the isolation header.
+The bot stores no user tokens; Bot Service holds the OAuth token cache.
 """
 
 from botbuilder.core import ConversationState, MessageFactory, TurnContext, UserState
@@ -145,7 +144,6 @@ class TeamsSsoBot(TeamsActivityHandler):
             )
             return await step.end_dialog()
 
-        user_oid = step.context.activity.from_property.aad_object_id or ""
-        answer = await self._agent.ask(agent_name, user_text, token_response.token, user_oid)
+        answer = await self._agent.ask(agent_name, user_text, token_response.token)
         await step.context.send_activity(MessageFactory.text(answer))
         return await step.end_dialog()

@@ -2,15 +2,12 @@
 """Calls the deployed Foundry hosted agent's Responses endpoint AS the signed-in user.
 
 The bot authenticates to Foundry with its OWN identity (managed identity / app credential,
-holding Foundry Agent Consumer), and passes the end user's context on two headers that the
+holding Foundry Agent Consumer), and passes the end user's context on one header that the
 platform forwards to the hosted container unchanged (container protocol 2.0.0):
 
   - ``x-client-user-token``  the user's delegated assertion (aud = the SSO/OBO app). The hosted
                              agent does the On-Behalf-Of exchange to Graph with it — this is the
                              per-user data path we validated.
-  - ``x-ms-user-identity``   the user's Entra object id, for per-user session ISOLATION. The bot's
-                             identity must hold the custom UserIdentityImpersonation role (see
-                             infra/modules/user-impersonation-role.bicep) or Foundry returns 403.
 
 ``Authorization`` (the bot's Foundry token) is what Foundry authenticates; it is NOT the user's
 token and is never reused downstream.
@@ -27,7 +24,7 @@ class AgentClient:
         self._credential = DefaultAzureCredential()
         self._base = Config.FOUNDRY_PROJECT_ENDPOINT.rstrip("/")
 
-    async def ask(self, agent_name: str, user_text: str, user_token: str, user_oid: str) -> str:
+    async def ask(self, agent_name: str, user_text: str, user_token: str) -> str:
         # Per-agent Responses route; the project-level /openai/v1 path treats `model` as a model
         # deployment and returns DeploymentNotFound for an agent name.
         url = f"{self._base}/agents/{agent_name}/endpoint/protocols/openai/responses?api-version=v1"
