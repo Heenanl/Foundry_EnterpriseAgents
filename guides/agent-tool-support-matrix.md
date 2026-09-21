@@ -1,38 +1,86 @@
 # SharePoint / enterprise-data grounding options for Foundry agents
 
-How each grounding option behaves across prompt and hosted agents.
-Legend: ✅ supported, ❌ not supported, ⚠️ partial, 🧪 preview.
+Choose a grounding route based on **user identity**, **site scoping**, and the agent hosting model.
+A container's managed identity does not grant delegated SharePoint access. Preview tool availability,
+licensing, and Teams behavior must be checked for the chosen service and deployment configuration.
+
+## Options
+
+The native SharePoint grounding tool runs in a delegated user context; use the prompt-agent sample
+for this route rather than an app-only hosted container.
+
+```mermaid
+flowchart LR
+U[User] --> P[Prompt agent]
+P --> S[SharePoint grounding tool]
+S --> R[Copilot Retrieval API]
+```
+
+Work IQ provides broad Microsoft 365 grounding. Databricks Genie serves a Genie space. Both use
+remote integrations, but their connection authentication and downstream permissions are distinct;
+do not infer per-user behavior from a successful answer or from another connector.
+
+```mermaid
+flowchart LR
+A[Agent] --> C[Configured remote connection]
+C --> W[Work IQ: Microsoft 365]
+C --> D[Databricks Genie: space]
+```
+
+For site-scoped hosted retrieval, [Path A](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md)
+uses Toolbox OAuth passthrough and a gateway; [Path B](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/README.md)
+uses a shared Teams SSO bot and in-agent OBO. A model-only prompt agent has no retrieval or document
+permission-trimming layer.
+
+```mermaid
+flowchart LR
+U[Teams user] --> A[Path A: auto-bot and Toolbox]
+A --> G[MCP-OBO gateway]
+U --> B[Path B: shared SSO bot and hosted agent]
+G --> R[Copilot Retrieval API]
+B --> R
+U --> M[Model-only prompt agent]
+```
+
+## Decision matrix
+
+The matrix describes route capabilities and constraints, not production certification. The native
+SharePoint, Work IQ, and MCP integrations include preview features.
 
 | # | Tool / route | Backed by | Prompt | Hosted | Teams | Per-user (trimmed) | Scoping | Licensing | Repo sample |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) 🧪 | Copilot Retrieval API | ✅ | ❌ (app-only) | ✅ as prompt, ❌ hosted | ✅ | one site/folder | Copilot license or Retrieval API paygo | `promptagent/sharepoint-agent-grounding-tool` |
-| 2 | Work IQ (`work_iq_preview`) 🧪 | Work IQ over M365 | ✅ | ✅ | ✅ | ✅ | none (broad M365) | Copilot license or Work IQ paygo | `hostedagent/sharepoint-agent-workiq` |
-| 3 | Databricks Genie (remote MCP) 🧪 | Databricks Genie | ✅ | ✅ | ✅ | ⚠️ shared token, not per-user | Genie space | Databricks | `hostedagent/databricks-agent` |
-| 4 | MCP-OBO gateway (Retrieval API) 🧪 | Copilot Retrieval API | ✅ | ✅ | ✅ | ⚠️ shared token in testing (Path A) | site / path / file type / date | Copilot license or Retrieval API paygo | `hostedagent/sharepoint-copilot-retrieval/pathA` |
-| 5 | Basic prompt agent (model only) | model deployment | ✅ | n/a | via publish | n/a | n/a | model only | `promptagent` |
-| 6 | Shared bot + `x-client-user-token` (in-code OBO) | Copilot Retrieval API | n/a | ✅ | ✅ | ✅ **verified** | site / path / file type / date | Copilot license or Retrieval API paygo | `hostedagent/sharepoint-copilot-retrieval/pathB` |
+| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | Not with app-only identity | Prompt route; check channel support | Delegated user context required | Site/folder | Copilot license or Retrieval API paygo | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
+| 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Via publish | Delegated connection required | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
+| 3 | Databricks Genie remote MCP | Databricks Genie | Yes | Yes | Via publish | Do not assume per-user; shared connection credentials do not trim by Teams caller | Genie space | Databricks | [Genie sample](../foundryagents/hostedagent/databricks-agent/README.md) |
+| 4 | Path A: Toolbox + MCP-OBO gateway | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Path A](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md) |
+| 5 | Basic prompt agent | Model deployment | Yes | Not this sample | Via publish | No retrieval | None | Model usage | [Prompt source](../foundryagents/promptagent/promptagent.py) |
+| 6 | Path B: shared SSO bot + in-code OBO | Copilot Retrieval API | Not this sample | Yes | Custom shared bot | Forwarded user token → in-agent OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Path B](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/README.md) |
 
-## What decides the outcome
+The Retrieval API supports additional filter expressions, but these samples configure a site
+`path` filter. File-type or date filtering requires an implementation change; it is not a sample setting.
 
-Identity: a prompt agent runs as the signed-in user (OBO); a hosted container runs as its own managed
-identity (app-only). A hosted agent is *intended* to get per-user access when Foundry brokers the
-user's token through an OAuth2 identity-passthrough connection (rows 2, 3, 4) — but in our testing the
-MCP-OBO gateway (row 4, **Path A**) returned the **first-consented (admin) token**, not per-user, so
-treat it as shared until verified for your tenant. The verified per-user route today is row 6
-(**Path B**), where a shared bot forwards each user's own Teams-SSO token on `x-client-user-token` and
-the agent does the OBO in code. This is also why the native SharePoint grounding tool works in a
-prompt agent but is rejected app-only in a hosted one.
+## Pros / cons
 
-Scoping: only the SharePoint grounding tool (site/folder) and the Retrieval API filter expression
-(site, path, file type, date) scope to a single site. Work IQ reasons over broad M365 and does not
-scope per site.
+| Option | Pros | Constraints |
+| --- | --- | --- |
+| SharePoint grounding tool | Managed grounding with site/folder scope | Requires delegated context; not an app-only hosted-container route |
+| Work IQ | Broad Microsoft 365 context without a custom retrieval gateway | No site-specific scope; review connection-specific licensing and consent |
+| Databricks Genie | Structured-data queries within a Genie space | Independently verify downstream caller identity; a shared credential is not per-user OBO |
+| Path A | Keeps the Foundry auto-bot; centralizes OBO in a gateway | Interactive tool OAuth consent, gateway operations, and separate private-network validation |
+| Model-only prompt agent | No retrieval infrastructure | Cannot provide permission-trimmed enterprise grounding |
+| Path B | Shared multiagent routing and explicit token control | Operate the bot and OBO credentials; durable bot storage needed for scale-out |
 
-## For hosted + Teams
+## Recommendation
 
-Work IQ, Databricks Genie, and the MCP-OBO gateway all run from a hosted agent on the Foundry auto-bot,
-because they use OAuth2 identity-passthrough where Foundry brokers the token. The MCP-OBO gateway
-applies that to the Copilot Retrieval API with site scoping — but **in testing it returned a shared
-(first-consented) token, not per-user** (Path A). For **verified per-user** trimming today, use the
-shared bot + `x-client-user-token` in-code OBO route (Path B). See the
-[decision matrix](per-user-sharepoint-obo-teams-decision-matrix.md) and
-[../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md).
+- For **hosted, site-scoped SharePoint retrieval**, choose Path A for the auto-bot plus tool consent, or Path B for a shared bot and Teams SSO with interactive fallback. See the [detailed decision guide](per-user-sharepoint-obo-teams-decision-matrix.md).
+- For broad Microsoft 365 grounding, consider Work IQ. For a prompt-only solution, consider the SharePoint grounding sample and confirm current Teams/channel support.
+- Use **Foundry Agent Consumer** for invocation at the narrowest supported agent/project scope and **Foundry User** for the agent identity's model calls at project scope. Do not assume tenant publishing or `BotServiceRbac` removes caller authorization requirements.
+- Retrieval API pay-as-you-go requires at least one Microsoft 365 Copilot license in the tenant. Work IQ billing and SharePoint-agent billing do not automatically entitle the raw Retrieval API.
+- Path A starts with a public Foundry project; private-network/APIM operation needs separate validation. For Path B, `publicNetworkAccess=Enabled` on a private-networked account is not evidence of private-only routing. Neither route is a production certification.
+
+## Customer validation
+
+Complete the [two-user checklist](per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+with a known document, a user who can read it, and a user who cannot. Compare authenticated tool
+identities and raw retrieval outcomes in separate sessions; do not use a model answer or blocked
+citation link as proof of permission trimming. Repeat for each connection and target network posture.

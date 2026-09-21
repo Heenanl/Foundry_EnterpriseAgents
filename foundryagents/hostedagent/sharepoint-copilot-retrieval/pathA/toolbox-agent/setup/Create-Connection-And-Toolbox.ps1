@@ -53,7 +53,7 @@ azd ai connection create $ConnectionName `
   --project-endpoint $ProjectEndpoint
 
 # 2) Read the reply URL Foundry generated for this connection (not surfaced by `azd ai connection show`).
-$connUrl = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AccountName/projects/$ProjectName/connections/$ConnectionName?api-version=2025-06-01"
+$connUrl = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AccountName/projects/$ProjectName/connections/${ConnectionName}?api-version=2025-06-01"
 $replyUrl = az rest --method get --url $connUrl --query "properties.redirectUrl" -o tsv
 if (-not $replyUrl) { throw "Could not read the connection reply URL from $connUrl" }
 Write-Host "Foundry reply URL: $replyUrl"

@@ -1,17 +1,18 @@
 # Path A — Foundry Toolbox OAuth identity-passthrough (Foundry-managed sign-in)
 
-The most "native" path. A Foundry **hosted agent** (Agent Framework) uses a **Foundry Toolbox**
+The native auto-bot path. A Foundry **hosted agent** (Agent Framework) uses a **Foundry Toolbox**
 wrapping an **OAuth2 identity-passthrough connection** to an **OBO gateway**. Foundry renders an
 "Open sign-in link" consent card in Teams and brokers the token server-side; it keeps the Foundry
-auto-bot (no custom bot) and publishes via the APIM bridge.
+auto-bot (no custom bot). This is **tool OAuth consent**, not silent Teams SSO.
 
-> ⚠️ **Not per-user in testing.** A `whoami` tool returned the **first-consented (admin)** identity
-> even when a different user was chatting, so that user saw the admin's content. Treat this as a
-> **shared-token** result until you verify per-user isolation for your tenant — see the
-> [decision matrix](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md) for the
-> full comparison and the recommended per-user path (Path B).
+## How it works
 
-## Architecture
+The [agent source](toolbox-agent/agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py)
+uses the official **`FoundryToolbox` + `ResponsesHostServer`** integration. Path A does **not** use
+`x-client-user-token` or a local OBO fallback in the hosted agent; the gateway owns the OBO exchange.
+
+The connection is named `SharePointRetrievalOBO` and the Toolbox is `sharepoint-retrieval-tools`.
+Keep the agent, connection, Toolbox, and model bound to the same intended project.
 
 ```mermaid
 flowchart LR
@@ -23,43 +24,54 @@ flowchart LR
     U -.->|first-time OAuth consent| GW
 ```
 
-## Components
+### Components
 
 | Folder | Role |
 | --- | --- |
-| [`toolbox-agent/`](toolbox-agent/README.md) | The Foundry hosted agent (MAF) using a Toolbox OAuth2 identity-passthrough connection. |
-| [`obo-gateway/`](obo-gateway/README.md) | The MCP-OBO gateway the Toolbox connection calls — does the OBO + Copilot Retrieval. |
+| [toolbox-agent/](toolbox-agent/README.md) | The Foundry hosted agent (MAF) using a Toolbox OAuth2 identity-passthrough connection. |
+| [obo-gateway/](obo-gateway/README.md) | The MCP-OBO gateway the Toolbox connection calls — does the OBO + Copilot Retrieval. |
 
-## Scaling to many agents and tools
+## Prerequisites
 
-The gateway is the **centralized OBO broker** shape you grow into when many agents and tools need
-per-user OBO — it puts the OBO app secret, downstream permissions, token caching, and per-user audit
-in one place. **Per-user is only preserved if the gateway receives the real signed-in user's token**
-(Path B's `x-client-user-token`), not the Toolbox's first-consented token. For the full scaling model,
-workflow, and the add-an-agent / add-a-tool steps, see the **Scaling** section in
-[`../pathB`](../pathB/README.md#scaling-to-many-agents-and-tools).
+1. An existing Foundry project, hosted-agent support, and a model deployment.
+2. A reachable MCP-OBO gateway with token verification enabled and a site URL configured.
+3. Delegated Graph `Files.Read.All` and `Sites.Read.All` permissions on the gateway app, with admin consent.
+4. Microsoft 365 Copilot user licenses or Retrieval API pay-as-you-go entitlement, including its
+  tenant license prerequisite.
+5. **Foundry Agent Consumer** for callers at the narrowest supported agent/project scope, and
+  **Foundry User** for the agent identity's model access at project scope. Do not assume
+  tenant publication or `BotServiceRbac` removes caller authorization requirements.
 
-## Roadmap — does Path A become verified per-user? (Sept 2026)
+## Deploy
 
-Foundry engineering (William Baumann) confirmed a **native Teams/M365 SSO flow is in progress — a top
-priority, ~4–6 weeks out** — that "will naturally connect to tool OAuth." That is exactly what Path A
-needs: a hosted agent published to Teams would get the **real signed-in user's** token flowing into the
-Toolbox OAuth passthrough, **without a custom bot**. So Path A's core blocker is **expected to be
-resolved** by this change — at which point Path B's custom bot becomes unnecessary for most cases.
+1. Follow the [gateway setup](obo-gateway/README.md).
+2. Create the connection and Toolbox, then deploy the [hosted agent](toolbox-agent/README.md).
+3. Use a **public** Foundry project for the documented starting configuration. Private-network/APIM
+  operation is outside this sample's validated scope and requires separate integration validation;
+  the inbound APIM bridge does not establish outbound Toolbox-to-gateway reachability.
 
-**"Fully works" is not guaranteed by that one change**, though — these are separate, still-open items:
+## Publish to Teams
 
-- **Token-sharing bug (ICM pending).** The first-consented/admin token we observed is a **bug**, not by
-  design ("file an ICM if we're incorrectly caching tokens"). Tracked separately; the SSO work may fix
-  it, but confirm with a two-user `whoami` check before relying on it.
-- **RBAC still required in testing.** PG says role assignments should be avoidable with the
-  **`BotServiceRbac`** (tenant-wide) auth policy, but in testing RBAC was **still required** even after
-  setting `BotServiceRbac`/`BotServiceTenant` — unresolved, ICM pending.
-- **Config gates remain regardless:** **admin consent** on the OBO/gateway app and a **Copilot /
-  Retrieval API license** per user.
+Follow the [agent publishing instructions](toolbox-agent/README.md#publish-to-teams). Each user
+completes tool OAuth consent as required. Tool approval settings do not replace consent.
 
-Until those close, **Path B is the verified per-user answer today**; re-test Path A once native SSO
-ships. See the [decision-matrix roadmap](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#product-group-guidance--roadmap-sept-2026).
+Before rollout, complete the [two-user validation checklist](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path):
+check actual tool identities, a positive retrieval control, and a no-access negative control in
+separate user sessions. Gateway-direct checks alone do not validate the Teams/Toolbox path.
 
-See the [decision matrix](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md) for how
-this compares to Path B.
+## Troubleshooting
+
+| Symptom | Cause / fix |
+| --- | --- |
+| Consent fails | Check the connection's redirect URI, requested scope, and gateway app configuration. |
+| Gateway cannot be reached | Check Toolbox service reachability separately from Teams-to-Foundry networking. |
+| Tool identity or retrieved content does not match the caller | Stop rollout and inspect the consent account, authenticated tool identity, and session boundaries. |
+| More tools or agents need OBO | Reuse the gateway only for APIs supporting delegated access; review each provider's permissions and user isolation. |
+
+## Next steps
+
+- Choose **Path A** when native auto-bot + tool consent is suitable; follow the
+  [agent setup](toolbox-agent/README.md) and [gateway setup](obo-gateway/README.md).
+- Choose **[Path B](../pathB/README.md)** for a shared bot, multiagent routing, or explicit user-token control.
+- Repeat the [two-user checks](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+  in your target environment before rollout.
