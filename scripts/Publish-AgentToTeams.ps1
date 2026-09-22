@@ -12,10 +12,17 @@
     Steps (per the official guidance):
       1. Get the agent identity principal ID (Foundry Get agent API) and tenant ID.
       2. Create/refresh the Azure Bot Service resource + Teams channel
-         (infra/bot-service.bicep) with its endpoint pointed at the APIM bridge.
-      3. (Automatic in step 4) Enable the activity protocol + Bot Service auth scheme.
+         (infra/bot-service.bicep).
+      3. Enable the activity protocol + Bot Service auth scheme.
       4. Call Foundry's Microsoft 365 publish API.
-    Step 5 (inbound networking) is already provided by the APIM bridge in this repo.
+
+    Two ways to satisfy step 5 (inbound networking):
+      -UseM365PublicEndpoint  Foundry admits Microsoft 365 / Teams source IPs on the
+                              agent's own Activity Protocol route. No APIM, no proxy.
+                              Preferred when the bridge exists only to reach Teams.
+      -ApimName/-ApimGateway  The APIM bridge in this repo. Still needed for custom
+                              public-to-private ingress, non-Teams surfaces, or API
+                              management concerns.
 
     Idempotent: re-running updates the same bot. Republishing the SAME AppVersion is
     rejected by Foundry (increment -AppVersion to change user-facing metadata).
@@ -51,6 +58,12 @@
 
 .PARAMETER ApiPath
     APIM API path prefix. Default 'foundry'.
+
+.PARAMETER UseM365PublicEndpoint
+    Skip the bridge: point the bot at the agent's own Activity Protocol route and set
+    enable_m365_public_endpoint so Foundry admits Microsoft 365 / Teams source IPs
+    while the account keeps publicNetworkAccess=Disabled. Mutually exclusive with
+    -ApimGateway / -ApimName.
 
 .PARAMETER FoundryApiVersion
     Activity-protocol api-version stamped on the bot endpoint. Default '2025-11-15-preview'.
@@ -109,6 +122,7 @@ param(
     [string]$ApimGateway,
     [string]$ApimName,
     [string]$ApiPath = 'foundry',
+    [switch]$UseM365PublicEndpoint,
     [string]$FoundryApiVersion = '2025-11-15-preview',
 
     [string]$BotName,
@@ -155,7 +169,10 @@ $resolvedHost = $Matches[1]
 $project      = $Matches[2]
 
 # ── Resolve the APIM gateway (optional) ───────────────────────────────────────
-if (-not $ApimGateway -and $ApimName) {
+if ($UseM365PublicEndpoint -and ($ApimGateway -or $ApimName)) {
+    throw 'Specify either -UseM365PublicEndpoint or the APIM bridge (-ApimGateway/-ApimName), not both.'
+}
+if (-not $UseM365PublicEndpoint -and -not $ApimGateway -and $ApimName) {
     $sub = az account show --query id -o tsv
     $ApimGateway = az rest --method GET `
         --url "https://management.azure.com/subscriptions/$sub/resourceGroups/$ResourceGroup/providers/Microsoft.ApiManagement/service/$($ApimName)?api-version=$ARM_API_VER" `
@@ -165,7 +182,11 @@ if (-not $ApimGateway -and $ApimName) {
 
 # ── Build the bot messaging endpoint ──────────────────────────────────────────
 $activityPath = "/api/projects/$project/agents/$AgentName/endpoint/protocols/activityprotocol?api-version=$FoundryApiVersion"
-if ($ApimGateway) {
+if ($UseM365PublicEndpoint) {
+    $botEndpoint = "$resolvedHost$activityPath"
+    $routing     = 'Foundry Activity Protocol route (M365 public endpoint, no bridge)'
+}
+elseif ($ApimGateway) {
     $ApimGateway = $ApimGateway.TrimEnd('/')
     $botEndpoint = "$ApimGateway/$ApiPath$activityPath"
     $routing     = "APIM bridge ($ApimGateway)"
@@ -250,6 +271,18 @@ $botServiceArmId = az deployment group show --resource-group $ResourceGroup --na
     --query 'properties.outputs.botServiceArmId.value' -o tsv
 if (-not $botServiceArmId) { throw 'Could not read botServiceArmId from the deployment outputs.' }
 Write-OK "Bot ready: $botServiceArmId"
+
+# ── Step 3: admit Microsoft 365 traffic to the private Activity Protocol route ─
+if ($UseM365PublicEndpoint) {
+    Write-Info '==> Enabling the Microsoft 365 public Activity Protocol route'
+    # The publish call would otherwise replace this with the scheme matching the scope.
+    $botAuthScheme = if ($PublishScope -eq 'Tenant') { 'BotServiceTenant' } else { 'BotServiceRbac' }
+    & (Join-Path $PSScriptRoot 'Enable-M365PublicEndpoint.ps1') `
+        -AgentName $AgentName `
+        -ProjectEndpoint $ProjectEndpoint `
+        -AuthorizationScheme $botAuthScheme
+    if ($LASTEXITCODE -ne 0) { throw 'Could not enable the Microsoft 365 public Activity Protocol route.' }
+}
 
 if ($SkipPublish) {
     Write-Host ''

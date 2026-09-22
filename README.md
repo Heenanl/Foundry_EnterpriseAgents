@@ -1,9 +1,11 @@
 # Private Foundry → Microsoft Teams Bridge
 
 This sample connects **private, VNet-isolated Foundry agents** to **Microsoft Teams** and
-**Microsoft 365 Copilot** through API Management Standard v2. APIM accepts the public Bot Service
-callback and forwards the Activity Protocol request to the private Foundry endpoint through VNet
-integration. Separate agent samples demonstrate delegated SharePoint retrieval.
+**Microsoft 365 Copilot**. Two inbound options are supported: Foundry's built-in
+`enable_m365_public_endpoint` setting, which needs **no bridge**, or an API Management Standard v2
+bridge that accepts the public Bot Service callback and forwards the Activity Protocol request to the
+private Foundry endpoint through VNet integration. Separate agent samples demonstrate delegated
+SharePoint retrieval.
 
 ## How it works
 
@@ -31,6 +33,43 @@ points it at APIM, and calls Foundry's Microsoft 365 publish API. See the
   `sharepoint-copilot-retrieval/pathA` sample; the Work IQ / Databricks samples use Microsoft-hosted
   MCP endpoints instead. Adding the inbound bridge does **not** validate this outbound integration;
   private-network Path A operation requires separate end-to-end validation.
+
+---
+
+## Inbound options
+
+Foundry can admit Microsoft 365 and Teams traffic to a private agent **without any bridge**, by setting
+`agent_endpoint.protocol_configuration.activity.enable_m365_public_endpoint`. Foundry applies
+service-managed source IP filtering to **only** the Activity Protocol route; `responses`,
+`invocations`, `a2a`, `mcp`, and the project APIs stay private, and the account keeps
+`publicNetworkAccess=Disabled`.
+
+```mermaid
+flowchart LR
+  T[Teams or Microsoft 365] --> B[Azure Bot Service]
+  B -->|Source-IP-filtered Activity Protocol route| F[Private Foundry endpoint]
+  F -->|Asynchronous reply via serviceUrl| B
+  B --> T
+```
+
+| | `enable_m365_public_endpoint` | APIM bridge |
+| --- | --- | --- |
+| Extra Azure resources | None | APIM Standard v2, `/27+` subnet, private DNS |
+| Public surface | Foundry-managed; Activity Protocol route only | Your APIM gateway |
+| Source IP filtering | Foundry-managed Bot Service and Microsoft 365 ranges | Yours to configure |
+| Configure with | [scripts/Enable-M365PublicEndpoint.ps1](scripts/Enable-M365PublicEndpoint.ps1) | [deploy.ps1](deploy.ps1) |
+| Publish with | `Publish-AgentToTeams.ps1 -UseM365PublicEndpoint` | `Publish-AgentToTeams.ps1 -ApimName <APIM_NAME>` |
+| Use when | Teams or Microsoft 365 is the only reason for the bridge | Custom public-to-private ingress, non-Teams surfaces, or API management |
+
+The setting changes **network reachability only**. Keep `BotServiceRbac` or `BotServiceTenant` in
+`authorization_schemes`; source IP filtering does **not** replace token validation, tenant checks, or
+RBAC. `PATCH /agents/{agent}` **replaces** the whole `protocol_configuration` and
+`authorization_schemes` bags, so
+[scripts/Enable-M365PublicEndpoint.ps1](scripts/Enable-M365PublicEndpoint.ps1) reads the agent first,
+re-sends every protocol and scheme it already had, and then verifies that nothing was dropped.
+
+Teams and Microsoft 365 remain **public-network products**. No Foundry setting makes the channel
+itself private.
 
 ---
 
@@ -79,10 +118,13 @@ points it at APIM, and calls Foundry's Microsoft 365 publish API. See the
 | [infra/main.bicep](infra/main.bicep) | Network and APIM infrastructure |
 | [infra/bot-service.bicep](infra/bot-service.bicep) | Azure Bot registration and Teams channel |
 | [APIM policy](apim-policies/foundry-activity-policy.xml) | Activity routing and API-version handling |
-| [Publisher](scripts/Publish-AgentToTeams.ps1) | Publish the agent through the bridge |
+| [Publisher](scripts/Publish-AgentToTeams.ps1) | Publish the agent through the bridge or the Microsoft 365 public endpoint |
+| [Microsoft 365 endpoint switch](scripts/Enable-M365PublicEndpoint.ps1) | Admit Microsoft 365 / Teams traffic to a private agent without a bridge |
+| [Endpoint patch helpers](scripts/M365AgentEndpoint.psm1) | Build the merge patch without dropping protocols or schemes |
 | [Onboarding reconciler](scripts/Onboard-Agents.ps1) | Repoint existing bots to APIM |
 | [Gateway app registration](scripts/Register-GatewayApp.ps1) | Entra setup for delegated MCP calls |
 | [Routing checks](tests/test_bridge.py) | Connectivity and routing diagnostics |
+| [Endpoint patch checks](tests/Test-M365AgentEndpoint.ps1) | Offline regression tests for the merge patch |
 
 ---
 
