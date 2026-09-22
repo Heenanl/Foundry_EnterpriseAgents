@@ -14,6 +14,13 @@ uses the official **`FoundryToolbox` + `ResponsesHostServer`** integration. Path
 The connection is named `SharePointRetrievalOBO` and the Toolbox is `sharepoint-retrieval-tools`.
 Keep the agent, connection, Toolbox, and model bound to the same intended project.
 
+**Verified 2026-09-23 (`swedencentral`, private project).** Built greenfield from this repo — new
+gateway app, gateway, connection, Toolbox, and agent — and published to Teams over the
+[native Microsoft 365 route](../../../../README.md) with **no API Management** in the path. Two users,
+same agent and same query: the user with site access received the document and its source link, and
+the user without access received no results. `whoami` returned each signed-in user, confirming the
+gateway's OBO exchange runs as the caller.
+
 ```mermaid
 flowchart LR
     U[Signed-in user] -->|prompt| A[Hosted agent<br/>toolbox-agent]
