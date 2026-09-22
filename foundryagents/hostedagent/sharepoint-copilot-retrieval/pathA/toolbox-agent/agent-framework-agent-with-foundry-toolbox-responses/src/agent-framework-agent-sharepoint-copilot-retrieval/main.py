@@ -46,12 +46,50 @@ def create_agent(credential):
     )
 
 
+class _HistorySafeContext:
+    def __init__(self, context):
+        self._context = context
+
+    def __getattr__(self, name):
+        return getattr(self._context, name)
+
+    async def get_history(self):
+        try:
+            return await self._context.get_history()
+        except Exception as ex:  # noqa: BLE001 - history failure must not fail the turn
+            logger.warning(
+                "context.get_history() failed (%s); proceeding with no prior history.",
+                ex,
+            )
+            return []
+
+
+class _ResilientResponsesHostServer(ResponsesHostServer):
+    """Treat transient platform history failures as an empty conversation."""
+
+    async def _handle_inner_agent(self, *args, **kwargs):  # type: ignore[override]
+        context = next(
+            (value for value in (*args, *kwargs.values()) if hasattr(value, "get_history")),
+            None,
+        )
+        if context is not None:
+            safe_context = _HistorySafeContext(context)
+            args = tuple(safe_context if value is context else value for value in args)
+            kwargs = {
+                name: safe_context if value is context else value
+                for name, value in kwargs.items()
+            }
+
+        async for item in super()._handle_inner_agent(*args, **kwargs):
+            yield item
+
+
 def main():
     from azure.ai.agentserver.core.tasks import set_resilient_tasks_enabled
 
     set_resilient_tasks_enabled(True)
     credential = DefaultAzureCredential()
-    server = ResponsesHostServer(create_agent(credential))
+    server = _ResilientResponsesHostServer(create_agent(credential))
     server.run()
 
 

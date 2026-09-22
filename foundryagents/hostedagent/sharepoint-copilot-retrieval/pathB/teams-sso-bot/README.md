@@ -44,8 +44,8 @@ rotate its confidential-client secret; user tokens must not be stored in configu
 
 ## Prerequisites
 
-1. The per-user [hosted agent deployed](../hosted-agent/README.md),
-   the `x-client-user-token` variant), with `OBO_*` set to the one app above.
+1. The per-user [`x-client-user-token` hosted-agent variant](../hosted-agent/README.md) deployed with
+  `OBO_*` set to the one app above.
 2. An **Azure Bot** registration (SingleTenant) using that app as `msaAppId` — either a dedicated one,
   or an existing registration deliberately repointed to this bot's `/api/messages` endpoint.
 3. A **Bot Service OAuth Connection Setting** named `teams-sso` (Azure AD v2): client id = the app,
@@ -136,9 +136,10 @@ bot routes to the target agent at runtime:
 - Set `AGENT_NAME` (default) and optionally `AGENTS=agent-a,agent-b,…` (the allow-list this bot can
   reach). Users switch with **`/use <name>`** and list with **`/agents`**.
 - The bot's identity (**Foundry Agent Consumer**) can invoke **any** agent it is granted on. All agents
-  deployed with the **same** `OBO_CLIENT_ID` (the one app) accept the same SSO token, so nothing is
-  shared at the SSO audience boundary. Each agent still needs its own runtime configuration and
-  **Foundry User** at project scope for model synthesis.
+  deployed with the **same** `OBO_CLIENT_ID` (the one app) accept the same SSO token, so the SSO
+  audience is intentionally shared across those agents. Runtime configuration and model
+  authorization remain per-agent: each agent still needs its own settings and **Foundry User** at
+  project scope for model synthesis.
 - **Reused across all agents:** the single SSO/OBO app, the `teams-sso` OAuth connection, this bot
   image, the Azure Bot registration, and the Teams app. **Per-agent:** just the agent existing in the
   project (and, if you want it selectable, its name in `AGENTS`).

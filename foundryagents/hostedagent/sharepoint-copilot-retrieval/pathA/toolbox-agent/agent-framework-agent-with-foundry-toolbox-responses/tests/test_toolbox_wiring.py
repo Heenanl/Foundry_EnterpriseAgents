@@ -1,5 +1,6 @@
 """Offline regression checks for the SharePoint Foundry Toolbox agent."""
 
+import asyncio
 import importlib.util
 import os
 from pathlib import Path
@@ -58,7 +59,7 @@ class ToolboxWiringTests(unittest.TestCase):
                 self.assertIs(result, agent.return_value)
         for name in (
             "sharepoint_retrieve", "_current_user_assertion", "_get_obo_app",
-            "CLIENT_USER_TOKEN_HEADER", "_ResilientResponsesHostServer",
+            "CLIENT_USER_TOKEN_HEADER",
         ):
             self.assertFalse(hasattr(agent_module, name), name)
 
@@ -83,7 +84,7 @@ class ToolboxWiringTests(unittest.TestCase):
             patch("azure.ai.agentserver.core.tasks.set_resilient_tasks_enabled") as enable,
             patch.object(agent_module, "DefaultAzureCredential") as credential,
             patch.object(agent_module, "create_agent") as create_agent,
-            patch.object(agent_module, "ResponsesHostServer") as server,
+            patch.object(agent_module, "_ResilientResponsesHostServer") as server,
         ):
             def construct_agent(value):
                 enable.assert_called_once_with(True)
@@ -95,6 +96,30 @@ class ToolboxWiringTests(unittest.TestCase):
         create_agent.assert_called_once_with(credential.return_value)
         server.assert_called_once_with(expected_agent)
         server.return_value.run.assert_called_once_with()
+
+    def test_resilient_host_tolerates_history_failure(self):
+        class FailingContext:
+            __slots__ = ()
+
+            async def get_history(self):
+                raise RuntimeError("history unavailable")
+
+        context = FailingContext()
+
+        async def base_handler(_server, *args, **kwargs):
+            received_context = next(
+                (value for value in (*args, *kwargs.values()) if hasattr(value, "get_history")),
+            )
+            yield await received_context.get_history()
+
+        server = object.__new__(agent_module._ResilientResponsesHostServer)
+        with patch.object(agent_module.ResponsesHostServer, "_handle_inner_agent", base_handler):
+            async def collect_results(*args, **kwargs):
+                return [item async for item in server._handle_inner_agent(*args, **kwargs)]
+
+            for args, kwargs in (((context,), {}), ((), {"context": context})):
+                with self.subTest(arguments="positional" if args else "keyword"):
+                    self.assertEqual(asyncio.run(collect_results(*args, **kwargs)), [[]])
 
     def test_real_sdk_construction_is_lazy_and_offline(self):
         class OfflineCredential:
