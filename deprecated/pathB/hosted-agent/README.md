@@ -39,11 +39,11 @@ One bot registration can front **many** allowed agents using in-chat routing.
 
 The more "native" alternative is a Foundry hosted agent + a **Foundry Toolbox** wrapping an OAuth2
 identity-passthrough connection (Foundry shows an "Open sign-in link" card and brokers the token
-server-side; see [Path A](../../pathA/README.md)). It keeps the Foundry auto-bot and needs no custom
+server-side; see [Path A](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md)). It keeps the Foundry auto-bot and needs no custom
 bot. Choose Path A when **interactive tool OAuth consent** is suitable; it is not silent Teams SSO.
 Choose Path B for shared routing and explicit user-token control. Teams SSO can still require
 interactive sign-in for consent, Conditional Access, or session renewal. See the
-[decision guide](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md).
+[decision guide](../../per-user-sharepoint-obo-teams-decision-matrix.md).
 
 ### Source and configuration
 
@@ -210,7 +210,7 @@ Set `AGENT_NAME` if it differs from `sp-obo-responses`. The harness caches the a
 operating-system temporary directory using the OBO app ID, **not a per-user key**. Remove that
 specific cache file between users, or use separate OS profiles; otherwise it can reuse the first
 user's token. Do not inspect or print the cached bearer token. Complete the
-[two-user checklist](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+[two-user checklist](../../../guides/verify-per-user-isolation.md)
 through Teams as well; a direct harness pass is not end-to-end channel validation.
 
 ## Publish to Teams
@@ -252,5 +252,5 @@ Use the custom bot's package rather than publishing this agent through the Found
 ## Next steps
 
 - [Shared Teams SSO bot](../teams-sso-bot/README.md)
-- [Path comparison and customer validation](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md)
+- [Path comparison and customer validation](../../per-user-sharepoint-obo-teams-decision-matrix.md)
 - [Foundry runtime RBAC](https://learn.microsoft.com/azure/foundry/concepts/rbac-foundry)

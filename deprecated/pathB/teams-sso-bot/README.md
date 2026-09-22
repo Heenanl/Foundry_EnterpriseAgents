@@ -7,7 +7,7 @@ Copilot Retrieval API **as the user**, site-scoped — so results are permission
 
 ## How it works
 
-The sibling [Path A](../../pathA/README.md) publishes on the **Foundry auto-bot** via an OAuth2
+The sibling [Path A](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md) publishes on the **Foundry auto-bot** via an OAuth2
 identity-passthrough connection and **interactive tool OAuth consent**. This bot instead provides
 **shared multiagent routing, Teams SSO, and explicit user-token forwarding**. SSO can be silent when
 consent and tenant policies permit; an interactive fallback may be required.
@@ -164,7 +164,7 @@ The [manifest template](../hosted-agent/teams-app/manifest.template.json) binds 
 `token.botframework.com` in `validDomains`. Review app metadata, then upload the package under
 your organization's Teams approval policy. Install the **custom bot's** app, not the Foundry auto-bot app.
 
-Complete the [two-user validation checklist](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+Complete the [two-user validation checklist](../../../guides/verify-per-user-isolation.md)
 with separate user profiles and conversations, including `/agents` and `/use` routing. User A should
 receive the permitted document; User B must receive no protected content or summary. An empty result
 or denial is only meaningful after a successful positive control and independent permission checks.
@@ -183,4 +183,4 @@ or denial is only meaningful after a successful positive control and independent
 ## Next steps
 
 - [Hosted agent setup](../hosted-agent/README.md)
-- [Path comparison and customer validation](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md)
+- [Path comparison and customer validation](../../per-user-sharepoint-obo-teams-decision-matrix.md)

@@ -63,7 +63,7 @@ flowchart LR
 Follow the [agent publishing instructions](toolbox-agent/README.md#publish-to-teams). Each user
 completes tool OAuth consent as required. Tool approval settings do not replace consent.
 
-Before rollout, complete the [two-user validation checklist](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path):
+Before rollout, complete the [two-user validation checklist](../../../../guides/verify-per-user-isolation.md):
 check actual tool identities, a positive retrieval control, and a no-access negative control in
 separate user sessions. Gateway-direct checks alone do not validate the Teams/Toolbox path.
 
@@ -78,8 +78,10 @@ separate user sessions. Gateway-direct checks alone do not validate the Teams/To
 
 ## Next steps
 
-- Choose **Path A** when native auto-bot + tool consent is suitable; follow the
-  [agent setup](toolbox-agent/README.md) and [gateway setup](obo-gateway/README.md).
-- Choose **[Path B](../pathB/README.md)** for a shared bot, multiagent routing, or explicit user-token control.
-- Repeat the [two-user checks](../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+- Follow the [agent setup](toolbox-agent/README.md) and [gateway setup](obo-gateway/README.md).
+- Repeat the [two-user checks](../../../../guides/verify-per-user-isolation.md)
   in your target environment before rollout.
+
+> Sign-in is an **interactive consent card**, not silent Teams SSO, and each agent gets its own
+> auto-bot. A retired sample showing silent SSO and one shared bot across agents is kept for
+> reference in [deprecated/pathB](../../../../deprecated/pathB/README.md).

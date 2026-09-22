@@ -98,7 +98,7 @@ tool approval to `never` does **not** remove the user's OAuth consent requiremen
 
 ### Validate user identity and retrieval
 
-Use the [two-user validation checklist](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path).
+Use the [two-user validation checklist](../../../../../guides/verify-per-user-isolation.md).
 As each user, call `whoami` and inspect the actual tool output, then call `sharepoint_retrieve`
 with the same document-specific query. The no-access user must receive no protected extracts or summary.
 The [per-user gateway client](client/validate_gateway_user.py) is a direct control; it does not
@@ -136,5 +136,5 @@ separately from the public-project starting configuration.
 ## Next steps
 
 - [Hosted Toolbox agent](../toolbox-agent/README.md)
-- [Path comparison and customer validation](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md)
+- [Verify per-user isolation](../../../../../guides/verify-per-user-isolation.md)
 - [Copilot Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview)

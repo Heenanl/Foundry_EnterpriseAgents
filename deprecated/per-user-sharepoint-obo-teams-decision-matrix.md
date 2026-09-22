@@ -1,5 +1,10 @@
 # Per-user SharePoint OBO from a Teams-published Foundry hosted agent — decision matrix
 
+> [!IMPORTANT]
+> **Deprecated — kept for reference.** This compares Path A with the retired Path B, so there is no
+> longer a decision to make. Path A is the supported route. For the verification steps that used to
+> live here, use [guides/verify-per-user-isolation.md](../guides/verify-per-user-isolation.md).
+
 **Problem.** You want a Foundry **hosted agent** published to **Microsoft Teams** to answer from
 SharePoint **trimmed to each signed-in user's permissions** (true On-Behalf-Of). A hosted container's
 own identity is not the user's delegated token. Choose between Foundry-brokered tool OAuth through
@@ -57,8 +62,8 @@ flowchart LR
     HA -->|synthesize + cite| M[Project model]
 ```
 
-- Setup: [Hosted agent](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/hosted-agent/README.md)
-  and [shared Teams SSO bot](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/teams-sso-bot/README.md).
+- Setup: [Hosted agent](pathB/hosted-agent/README.md)
+and [shared Teams SSO bot](pathB/teams-sso-bot/README.md).
 
 SSO may require interactive sign-in for consent, Conditional Access, or expired sessions. A
 private-networked account with `publicNetworkAccess=Enabled` is not a private-only deployment;

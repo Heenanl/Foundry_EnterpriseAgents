@@ -94,17 +94,15 @@ own prerequisites and deployment steps.
 | Sample | What it shows |
 | --- | --- |
 | [Basic agent](foundryagents/hostedagent/basic-agent/README.md) | Minimal hosted agent, no tools — the fastest path to a working Teams publish. **Start here.** |
-| [SharePoint retrieval](foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) | Per-user, site-scoped SharePoint through the Copilot Retrieval API. **Path A** uses the native auto-bot with Toolbox OAuth consent; **Path B** uses a shared Teams SSO bot with explicit token forwarding. |
+| [SharePoint retrieval](foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) | Per-user, site-scoped SharePoint through the Copilot Retrieval API, using the native auto-bot with Toolbox OAuth consent. |
 | [Work IQ](foundryagents/hostedagent/sharepoint-agent-workiq/README.md) | Broad Microsoft 365 grounding through the Microsoft-hosted Work IQ MCP server, without site scoping. |
 | [Databricks](foundryagents/hostedagent/databricks-agent/README.md) | Databricks Genie through a Foundry Toolbox MCP connection. |
 | [SharePoint grounding tool](foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) | Site-scoped grounding on a prompt agent rather than a hosted container. |
 | [Agent audit logging](observability/foundry-agent-audit/README.md) | Per-agent attribution in Log Analytics. |
 
-Path A's documented starting configuration uses a **public** Foundry project, and tool OAuth consent
-is **not** silent Teams SSO. For Path B, a private-networked account with
-`publicNetworkAccess=Enabled` does not establish private-only operation. Validate the complete route
-you choose with the
-[two-user checklist](guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path).
+Sign-in for the retrieval sample is **interactive tool OAuth consent**, not silent Teams SSO: each
+user approves once, then the agent retrieves as them. Validate the route you choose with the
+[two-user checklist](guides/verify-per-user-isolation.md).
 These preview retrieval samples do not certify production readiness or every network combination.
 
 ---
@@ -209,7 +207,7 @@ pwsh tests/Test-M365AgentEndpoint.ps1
 4. Confirm the private protocols stayed private: `responses` and the project APIs must remain
    unreachable from outside your network rules.
 5. For SharePoint retrieval, run the
-   [two-user validation checklist](guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+   [two-user validation checklist](guides/verify-per-user-isolation.md)
    for the selected path and network configuration.
 
 ---
@@ -332,7 +330,7 @@ delegated-access approach:
 ## Next steps
 
 - Pick an agent sample — [guides/agent-tool-support-matrix.md](guides/agent-tool-support-matrix.md)
-- Compare per-user SharePoint options — [guides/per-user-sharepoint-obo-teams-decision-matrix.md](guides/per-user-sharepoint-obo-teams-decision-matrix.md)
+- Verify per-user isolation before rollout — [guides/verify-per-user-isolation.md](guides/verify-per-user-isolation.md)
 - Audit agent usage — [observability/foundry-agent-audit/README.md](observability/foundry-agent-audit/README.md)
 - Microsoft Learn — [Allow Microsoft 365 traffic to a private-network agent](https://learn.microsoft.com/azure/foundry/agents/how-to/configure-agent#allow-microsoft-365-traffic-to-a-private-network-agent) and [Publish agents by using the REST API](https://learn.microsoft.com/azure/foundry/agents/how-to/publish-copilot-virtual-network)
 - [Microsoft Foundry documentation](https://learn.microsoft.com/azure/ai-foundry/)

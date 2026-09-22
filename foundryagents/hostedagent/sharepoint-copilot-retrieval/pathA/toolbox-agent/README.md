@@ -164,7 +164,7 @@ requires admin approval.
 
 Open the agent in Teams, complete consent as required, and ask.
 
-Repeat the [two-user checks](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+Repeat the [two-user checks](../../../../../guides/verify-per-user-isolation.md)
 with fresh, separate conversations in the target environment before rollout.
 
 ## Troubleshooting
@@ -177,7 +177,7 @@ with fresh, separate conversations in the target environment before rollout.
 | `403 … Files.Read.All/Sites.Read.All` | Gateway app missing/ungranted Graph delegated permissions — re-run `Register-GatewayApp.ps1`. |
 | `403 … valid license` | User isn't Copilot-licensed and Retrieval API paygo isn't enabled — a licensing gate, not code. |
 | Startup / readiness fails | Ensure `enableHostedAgentVNext=true` and `AZURE_AI_MODEL_DEPLOYMENT_NAME` matches a real deployment. |
-| Tool calls ask for `x-client-user-token` | Wrong/old local-OBO implementation deployed. Path A uses `FoundryToolbox`; explicit header forwarding belongs to Path B. |
+| Tool calls ask for `x-client-user-token` | Wrong/old local-OBO implementation deployed. Path A uses `FoundryToolbox`; explicit header forwarding belonged to the retired shared-bot sample. |
 | Wrong project or Toolbox selected | Check `FOUNDRY_PROJECT_ENDPOINT` and `TOOLBOX_NAME` together; the agent deliberately ignores `TOOLBOX_ENDPOINT` and `ENABLE_TOOLBOX`. |
 
 ## Next steps
