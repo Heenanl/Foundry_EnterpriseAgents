@@ -27,7 +27,7 @@ container.
 3. **Foundry User** on the project. The agent identity also needs **Foundry User** for model access.
 4. **Python 3.12+** only if you want to run the agent locally.
 
-Placeholders used below: `<FOUNDRY_ACCOUNT>`, `<PROJECT>`, `<RESOURCE_GROUP>`.
+Placeholders used below: `<FOUNDRY_ACCOUNT>`, `<PROJECT>`, `<PROJECT_ARM_ID>`, `<RESOURCE_GROUP>`.
 
 ## Deploy
 
@@ -41,11 +41,21 @@ az login
 azd up
 ```
 
-`azd` provisions the model deployment if it is missing, builds the container in ACR, and registers
-the agent version. To target an existing project, set its endpoint first:
+By default this **creates a new resource group, Foundry account, and project**, deploys the model, and
+registers the agent version.
+
+To deploy into an **existing** project, scaffold against its ARM resource ID. Setting
+`AZURE_AI_PROJECT_ENDPOINT` alone does **not** retarget provisioning:
 
 ```powershell
-azd env set AZURE_AI_PROJECT_ENDPOINT https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT>
+azd ai agent init --project-id <PROJECT_ARM_ID>
+```
+
+The first deploy often takes longer than `azd`'s 20-minute wait. A timeout message does not mean
+failure — the agent usually keeps activating in Azure. Wait longer with:
+
+```powershell
+azd deploy --timeout 2400
 ```
 
 Confirm it answers before publishing:
@@ -71,6 +81,8 @@ public network access — the publish API enables the activity protocol on its o
 
 | Symptom | Cause / fix |
 | --- | --- |
+| `azd up` created a new resource group and project | That is the default. Target an existing project with `azd ai agent init --project-id <PROJECT_ARM_ID>`. |
+| `deployment of service ... timed out after 1200 seconds` | `azd` stopped waiting; the agent usually still activates. Check its status, or re-run with `azd deploy --timeout 2400`. |
 | `azd up` cannot find the model | The deployment name in [azure.yaml](azure.yaml) does not exist in the project. Edit it, or let `azd` create it. |
 | Agent returns an authorization error | Grant the agent identity **Foundry User** at project scope for model access. |
 | No reply in Teams | See the [publishing troubleshooting table](../../../README.md#troubleshooting). |
