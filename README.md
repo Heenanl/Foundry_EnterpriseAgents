@@ -71,6 +71,19 @@ re-sends every protocol and scheme it already had, and then verifies that nothin
 Teams and Microsoft 365 remain **public-network products**. No Foundry setting makes the channel
 itself private.
 
+**Verified 2026-09-22 (`swedencentral`).** Controlled A/B against a restricted project
+(`networkAcls.defaultAction=Deny`, Azure Bot Service ranges **not** allowlisted), with the bot
+pointed straight at the agent's Activity Protocol route and APIM removed from the path:
+
+| `enable_m365_public_endpoint` | Result in Teams |
+| --- | --- |
+| `true` | Agent replies; `BotServiceRbac` sign-in still enforced |
+| `false` | No reply |
+
+Only the flag changed between the two runs, which rules out `networkAcls.bypass=AzureServices` as the
+cause. The agent's `responses` protocol kept serving throughout. Not yet retested with
+`publicNetworkAccess=Disabled`, which is the configuration the Microsoft Learn guidance describes.
+
 ---
 
 ### Bridge behavior
