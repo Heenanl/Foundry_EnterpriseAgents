@@ -181,6 +181,7 @@ pwsh tests/Test-M365AgentEndpoint.ps1
 
 | Symptom | Cause / fix |
 | --- | --- |
+| Bot deployment fails with `The bot name is already registered to another bot application` | Azure Bot names are **globally unique**. The script derives one from the agent name; pass a unique `-BotName` instead. |
 | Channel adapter receives `403 NetworkAccessDenied` | `enable_m365_public_endpoint` is unset or `false`, or the request did not originate from an Azure Bot Service / Microsoft 365 range. Run `Enable-M365PublicEndpoint.ps1`. |
 | A direct public request to the Activity route returns `403` | Expected. Only Microsoft 365 and Bot Service ranges are admitted — test through Teams. |
 | Requests arrive but are rejected | No Bot Service authorization scheme is configured, or the caller is outside the project tenant. Guest users cannot call these agents. |

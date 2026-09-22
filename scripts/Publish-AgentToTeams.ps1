@@ -349,7 +349,8 @@ Write-Host " Publish scope: $PublishScope" -ForegroundColor White
 if ($PublishScope -eq 'Tenant') {
     Write-Host ' Next         : a Microsoft 365 admin must approve it in the M365 admin center' -ForegroundColor Yellow
 }
-if (-not $ApimGateway) {
-    Write-Host ' Next         : run ./deploy.ps1 -OnboardOnly to route the bot through the APIM bridge' -ForegroundColor Yellow
+if (-not $ApimGateway -and -not $UseM365PublicEndpoint) {
+    Write-Host ' Next         : open the Microsoft 365 route with -UseM365PublicEndpoint, or route the bot' -ForegroundColor Yellow
+    Write-Host '                through the APIM bridge with ./deploy.ps1 -OnboardOnly' -ForegroundColor Yellow
 }
 Write-Host " Find it in the agent store (~1 hr cache): Shared -> 'Your agents', Tenant -> 'Built by your org'." -ForegroundColor White

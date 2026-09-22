@@ -70,12 +70,13 @@ From the **repository root**:
 
 ```powershell
 ./scripts/Publish-AgentToTeams.ps1 -ResourceGroup <RESOURCE_GROUP> `
-  -AgentName contoso-support-agent `
+  -AgentName contoso-support-agent -BotName <UNIQUE_BOT_NAME> `
   -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> -UseM365PublicEndpoint
 ```
 
-Open the agent in Teams and send it a message. Drop `-UseM365PublicEndpoint` when the project allows
-public network access — the publish API enables the activity protocol on its own.
+Azure Bot names are **globally unique**, so pass a `-BotName` that is unlikely to collide. Open the
+agent in Teams and send it a message. Drop `-UseM365PublicEndpoint` when the project allows public
+network access — the publish API enables the activity protocol on its own.
 
 ## Troubleshooting
 
@@ -83,6 +84,7 @@ public network access — the publish API enables the activity protocol on its o
 | --- | --- |
 | `azd up` created a new resource group and project | That is the default. Target an existing project with `azd ai agent init --project-id <PROJECT_ARM_ID>`. |
 | `deployment of service ... timed out after 1200 seconds` | `azd` stopped waiting; the agent usually still activates. Check its status, or re-run with `azd deploy --timeout 2400`. |
+| `The bot name is already registered to another bot application` | Azure Bot names are globally unique. Pass a unique `-BotName`. |
 | `azd up` cannot find the model | The deployment name in [azure.yaml](azure.yaml) does not exist in the project. Edit it, or let `azd` create it. |
 | Agent returns an authorization error | Grant the agent identity **Foundry User** at project scope for model access. |
 | No reply in Teams | See the [publishing troubleshooting table](../../../README.md#troubleshooting). |
