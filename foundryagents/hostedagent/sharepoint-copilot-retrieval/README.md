@@ -5,11 +5,13 @@ signed-in user's permissions, and publishable to Microsoft Teams on the Foundry 
 bot. It reaches SharePoint through the repo's **[OBO gateway](obo-gateway/README.md)**.
 Agent Framework, Responses protocol.
 
-**Verified 2026-09-23 (`swedencentral`, private project).** Built greenfield from this repo — new
-gateway app, gateway, connection, Toolbox, and agent — and published to Teams over the
-[native Microsoft 365 route](../../../README.md) with **no API Management** in the path. Two users,
-same agent and query: the user with site access received the document and its source link; the user
-without access received no results. `whoami` returned each signed-in user.
+**Verified 2026-09-23 (`swedencentral`).** The steps below were run end to end from a clean start — a
+new gateway app registration, gateway, connection, Toolbox, and agent — then published to Teams over
+the [native Microsoft 365 route](../../../README.md) with **no API Management** in the path. Two users
+asked the same agent the same question: the one with site access received the document and its source
+link; the one without access received no results, and `whoami` returned each signed-in user. That run
+used its own connection and Toolbox names to avoid colliding with existing resources — the names in
+this README are the setup script's defaults, not requirements.
 
 ## How it works
 
@@ -23,8 +25,7 @@ the **Microsoft 365 Copilot Retrieval API** as the user (site-scoped via `filter
 The Toolbox URL is built explicitly from `FOUNDRY_PROJECT_ENDPOINT` and `TOOLBOX_NAME`; a stale
 `TOOLBOX_ENDPOINT` cannot select a different project. There is **no local OBO fallback**, no
 `x-client-user-token` requirement, and no `APP_OBO_*` secret in this agent. The gateway still needs
-its OBO configuration. The sample uses `SharePointRetrievalOBO` (connection) and
-`sharepoint-retrieval-tools` (Toolbox).
+its OBO configuration.
 
 ```mermaid
 flowchart LR
@@ -50,8 +51,9 @@ different paths — opening the Microsoft 365 route does not establish gateway r
    [scripts/Register-GatewayApp.ps1](../../../scripts/Register-GatewayApp.ps1).
 2. An existing Foundry project with a model deployment (e.g. `gpt-4.1`).
 3. **Python 3.12+**, PowerShell 7+, Azure CLI, and Azure Developer CLI with the Foundry extension.
-4. **Additional Azure resources:** the `SharePointRetrievalOBO` connection + `sharepoint-retrieval-tools`
-   toolbox — created with the setup script under Option 1.
+4. **Additional Azure resources:** an OAuth2 identity-passthrough connection and a Toolbox that wraps
+   it — created with the setup script under Option 1 (defaults `SharePointRetrievalOBO` and
+   `sharepoint-retrieval-tools`).
 5. **Roles (RBAC):** grant callers **Foundry Agent Consumer** at the narrowest supported agent scope;
    use project scope only when required. Verify endpoint authorization rather than assuming tenant
    publishing or `BotServiceRbac` removes caller RBAC. Grant the agent identity **Foundry User** at
@@ -100,6 +102,10 @@ toolbox — the *MCP OAuth Identity Passthrough* scenario from the
 > in the Foundry Toolkit instead. Either way, Foundry's per-connection reply URL **must** be registered
 > on the gateway app or the first consent fails with a `redirect_uri` mismatch (the script does this).
 
+To run alongside existing resources, pass `-ConnectionName` and `-ToolboxName`. If you rename the
+toolbox, set `TOOLBOX_NAME` in
+[azure.yaml](agent-framework-agent-with-foundry-toolbox-responses/azure.yaml) to match — the agent
+resolves its Toolbox from that value, so a mismatch surfaces as an agent with no tools.
 ### Initialize and deploy the agent
 
 Before deployment, verify the selected environment's project endpoint: agent, model, connection,
