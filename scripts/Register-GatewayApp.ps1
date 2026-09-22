@@ -16,9 +16,12 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$DisplayName = "mcp-obo-gateway"
+  [string]$DisplayName = "mcp-obo-gateway",
+  # Secrets are written here instead of the console. *.env is gitignored.
+  [string]$EnvFilePath
 )
 $ErrorActionPreference = "Stop"
+if (-not $EnvFilePath) { $EnvFilePath = Join-Path (Get-Location) "$DisplayName.env" }
 
 $graph        = "00000003-0000-0000-c000-000000000000"
 $FilesReadAll = "df85f4d6-205c-4ac5-a5ea-6bf408dba283"   # delegated
@@ -100,12 +103,23 @@ Write-Host "Admin consent granted"
 
 # 6) Client secret (dev path).
 $secret = az ad app credential reset --id $appId --display-name "gateway-obo" --query password -o tsv
+$tenantId = az account show --query tenantId -o tsv
+
+# Never echo the secret: console output lands in shell history, CI logs, and screen shares.
+$envLines = @(
+  "GATEWAY_TENANT_ID=$tenantId",
+  "GATEWAY_CLIENT_ID=$appId",
+  "GATEWAY_CLIENT_SECRET=$secret",
+  "REQUIRED_SCOPES=access_as_user"
+)
+[System.IO.File]::WriteAllLines($EnvFilePath, $envLines, (New-Object System.Text.UTF8Encoding($false)))
 
 Write-Host ""
-Write-Host "===== gateway .env values =====" -ForegroundColor Green
-Write-Host "GATEWAY_TENANT_ID=$(az account show --query tenantId -o tsv)"
+Write-Host "===== gateway values =====" -ForegroundColor Green
+Write-Host "GATEWAY_TENANT_ID=$tenantId"
 Write-Host "GATEWAY_CLIENT_ID=$appId"
-Write-Host "GATEWAY_CLIENT_SECRET=$secret"
-Write-Host "REQUIRED_SCOPES=access_as_user"
 Write-Host "APP_ID_URI=api://$appId"
-Write-Host "==============================="
+Write-Host "REQUIRED_SCOPES=access_as_user"
+Write-Host "GATEWAY_CLIENT_SECRET  -> written to $EnvFilePath (not printed)"
+Write-Host "==========================="
+Write-Host "Keep that file out of source control and move the secret to your host's secret store." -ForegroundColor Yellow

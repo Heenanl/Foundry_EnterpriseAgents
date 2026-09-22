@@ -51,6 +51,7 @@ azd ai connection create $ConnectionName `
   --token-url $tokenUrl `
   --scopes $scopes `
   --project-endpoint $ProjectEndpoint
+if ($LASTEXITCODE -ne 0) { throw "Connection '$ConnectionName' creation failed." }
 
 # 2) Read the reply URL Foundry generated for this connection (not surfaced by `azd ai connection show`).
 $connUrl = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AccountName/projects/$ProjectName/connections/${ConnectionName}?api-version=2025-06-01"
@@ -60,13 +61,32 @@ Write-Host "Foundry reply URL: $replyUrl"
 
 # 3) Register the reply URL on the gateway app as a Web redirect URI (append-safe — az replaces the list).
 $existing = az ad app show --id $GatewayAppId --query "web.redirectUris" -o json | ConvertFrom-Json
-$all = @($existing) + $replyUrl | Where-Object { $_ } | Select-Object -Unique
-az ad app update --id $GatewayAppId --web-redirect-uris @all
+# Force an array: on a brand-new app this collapses to a single string, and splatting a scalar breaks the call.
+$all = @(@($existing) + @($replyUrl) | Where-Object { $_ } | Select-Object -Unique)
+az ad app update --id $GatewayAppId --web-redirect-uris $all
+if ($LASTEXITCODE -ne 0) { throw "Could not register the reply URL on app $GatewayAppId." }
+$verify = @(az ad app show --id $GatewayAppId --query "web.redirectUris" -o json | ConvertFrom-Json)
+if ($verify -notcontains $replyUrl) {
+  throw "Reply URL is not registered on app $GatewayAppId; consent would fail with a redirect_uri mismatch."
+}
 Write-Host "Registered reply URL on gateway app $GatewayAppId"
 
 # 4) Create the toolbox that wraps the connection.
 Write-Host "Creating toolbox $ToolboxName from $ToolboxFile ..."
-azd ai toolbox create $ToolboxName --from-file $ToolboxFile --project-endpoint $ProjectEndpoint
+# toolbox.yaml ships a <gateway-host> placeholder so it reads as documentation on its own.
+$spec = (Get-Content -Raw $ToolboxFile) -replace '<gateway-host>', $GatewayHost
+# Bind to the connection this run actually created; the file hardcodes the default name.
+$spec = $spec -replace '(?m)^(\s*project_connection_id:\s*).+$', "`${1}$ConnectionName"
+# azd rejects any extension other than .yaml/.yml, so don't use New-TemporaryFile here.
+$specFile = Join-Path ([System.IO.Path]::GetTempPath()) ("toolbox-{0}.yaml" -f [guid]::NewGuid())
+try {
+    [System.IO.File]::WriteAllText($specFile, $spec, (New-Object System.Text.UTF8Encoding($false)))
+    azd ai toolbox create $ToolboxName --from-file $specFile --project-endpoint $ProjectEndpoint
+    if ($LASTEXITCODE -ne 0) { throw "Toolbox '$ToolboxName' creation failed." }
+}
+finally {
+    Remove-Item $specFile -ErrorAction SilentlyContinue
+}
 
 Write-Host ""
 Write-Host "===== done =====" -ForegroundColor Green

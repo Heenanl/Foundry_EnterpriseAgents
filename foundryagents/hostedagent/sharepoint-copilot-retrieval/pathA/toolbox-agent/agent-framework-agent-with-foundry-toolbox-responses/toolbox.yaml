@@ -1,5 +1,7 @@
 # Mirrors the `sharepoint-retrieval-tools` toolbox (default version 1) in your Foundry project.
-# Recreate with: azd ai toolbox create sharepoint-retrieval-tools --from-file toolbox.yaml
+# `<gateway-host>` below is a placeholder: setup/Create-Connection-And-Toolbox.ps1 substitutes your
+# real gateway host before creating the toolbox. Creating it straight from this file fails with
+# "Invalid URI: The hostname could not be parsed".
 #
 # Route for HOSTED agents: the OBO gateway (this repo's pathA/obo-gateway)
 # behind a Foundry OAuth2 identity-passthrough connection. On first use the signed-in user
