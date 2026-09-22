@@ -51,6 +51,10 @@ This changes **network reachability only** — keep `BotServiceRbac` or `BotServ
 `authorization_schemes` so callers are still authorized. Teams and Microsoft 365 are themselves
 public-network products; no Foundry setting makes the channel private.
 
+**Verified 2026-09-23 (`swedencentral`).** With `publicNetworkAccess=Disabled`, a Teams message
+reached the agent and got a reply, while the Responses protocol and the management API both returned
+`403` from the public internet.
+
 **Still need API Management?** Keep it for custom public-to-private ingress, non-Teams surfaces, or
 API-management concerns such as quotas and request shaping. See
 [Appendix — API Management bridge](#appendix--api-management-bridge).
