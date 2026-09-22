@@ -1,29 +1,17 @@
-# MCP OBO Gateway — a generic per‑user tool gateway for Foundry hosted agents
+# MCP-OBO gateway for delegated SharePoint retrieval
 
 A **lightweight, provider‑pluggable MCP server** that gives a **hosted** Foundry agent **per‑user
 (OBO)** access to downstream APIs while **keeping the Foundry auto‑published Teams bot** (no custom
-bot to build or maintain).
-
-It uses the **same mechanism Work IQ and Databricks Genie already use** in this repo: an **OAuth2
-identity‑passthrough** connection where **Foundry brokers the user's token server‑side** and forwards
-it to this MCP server. The gateway then does the **On‑Behalf‑Of** exchange and calls the downstream API
-as the user.
-
-> **Generic by design.** Ships with a **Copilot Retrieval API** (SharePoint) provider, but the OBO +
-> MCP transport is downstream‑agnostic. Any tool that **lacks Foundry server‑side OBO** can be added as
-> a small **provider** module — no auth or MCP plumbing to write.
-
-## Why this approach
-- **Keeps the Foundry auto‑published Teams bot** — no bot code, no Teams manifest, no sideload.
-- **Foundry brokers the user token** (OAuth2 passthrough); the gateway only does the OBO exchange.
-- **One gateway, many providers** — reused across agents and tools, not configured per agent.
+bot to build or maintain). Foundry brokers the user's token through an **OAuth2 identity-passthrough**
+connection, and the gateway exchanges it for a delegated Microsoft Graph token. The included provider
+calls the **Copilot Retrieval API**, using a configured SharePoint site filter.
 
 ## How it works
 
 ```mermaid
 flowchart LR
     U([Teams user]) --> BOT[Foundry auto-bot<br/>unchanged] --> AG[Hosted agent]
-    AG -->|MCP tool call| GW["MCP OBO Gateway<br/>(this app — App Service / Function / ACA)"]
+    AG -->|MCP tool call| GW["MCP-OBO gateway<br/>App Service or Container Apps"]
     F[Foundry OAuth2 identity-passthrough<br/>connection brokers the user token] -.->|Authorization: user token| GW
     GW -->|OBO exchange to provider scopes| E[Entra]
     GW -->|call downstream API as the user| D[(Downstream: Retrieval API / future tools)]
@@ -36,102 +24,117 @@ flowchart LR
 3. On each tool call it does **OBO** → a downstream token for the scopes that provider needs.
 4. The provider calls the downstream API **as the user** (permission-trimmed) and returns results.
 
-> **Validated by peers.** [karpikpl/foundry-keycloak-passthrough](https://github.com/karpikpl/foundry-keycloak-passthrough)
-> proves Foundry's OAuth2 passthrough delivers a per-user token to a **custom FastMCP server** (its
-> `agent_v2` uses exactly the wiring below). [alisoliman/mcp-obo](https://github.com/alisoliman/mcp-obo)
-> is the reference for the delegated-identity pattern (verify the inbound token, then OBO). This
-> gateway adopts both lessons: **verify, then exchange**.
+The [server entry point](server/app.py) enforces inbound token verification before calling the
+[OBO client](server/obo.py). The [retrieval provider](server/providers/copilot_retrieval.py) supplies
+the downstream scopes and site filter. Other providers require their own delegated-access and
+authorization review; behavior of unrelated Work IQ or Databricks connections is not implied.
 
-## Layout
-```
-mcp-obo-gateway/server/
-├── app.py                       ← FastMCP server; verifies token, wires OBO + loads providers
-├── obo.py                       ← generic On-Behalf-Of exchange (MSAL)
-├── config.py
-├── providers/
-│   ├── base.py                  ← Provider contract
-│   ├── whoami.py                ← diagnostic: echoes the resolved user identity (no downstream)
-│   ├── copilot_retrieval.py     ← reference provider (SharePoint, site-scoped)
-│   └── __init__.py              ← loads enabled providers
-├── requirements.txt · Dockerfile · .env.example
-```
+### Extending the gateway
 
-## Add a new downstream tool (the generic part)
-Create `providers/<your_tool>.py`:
-```python
-name = "your_tool"
+Implement the [provider contract](server/providers/base.py) in a provider module and add its name
+to `ENABLED_PROVIDERS`. Use `register(mcp, exchange)` and request trusted, resource-specific scopes
+through `exchange`; do not accept arbitrary downstream scopes or destinations from model input.
+Add only necessary delegated permissions to the app, obtain admin consent, and repeat two-user
+validation for each new provider.
 
-def register(mcp, exchange):
-    @mcp.tool(name="do_thing", description="...")
-    async def do_thing(arg: str) -> dict:
-        token = await exchange(["<downstream/scope>"])   # gateway does the OBO for you
-        # ... call the downstream API with `token` as the user ...
-        return {...}
-```
-Then add it to `ENABLED_PROVIDERS`. That's it — no auth/MCP code. This is what makes it work for
-**future tools that don't have Foundry server‑side OBO**.
+## Prerequisites
 
-## Setup
+1. A same-tenant Entra app exposing `access_as_user` and issuing version-2 access tokens for the
+  gateway audience. Use [scripts/Register-GatewayApp.ps1](../../../../../scripts/Register-GatewayApp.ps1)
+  to configure the app; review its parameters before running it.
+2. Delegated Microsoft Graph **Files.Read.All** and **Sites.Read.All** permissions with tenant
+  admin consent. Admin consent does not grant additional SharePoint access to users.
+3. A confidential-client credential: a securely stored client secret, or a configured managed-identity
+  federated credential. These credentials authenticate the gateway, not the end user.
+4. Microsoft 365 Copilot licenses for users or **Retrieval API pay-as-you-go** entitlement, which
+  requires at least one Microsoft 365 Copilot license in the tenant.
+5. A host reachable by the Foundry Toolbox service over HTTPS, and gateway egress to Entra and Graph.
+  A host in the agent's VNet is not sufficient by itself to prove Toolbox reachability. Private-only
+  gateway/Foundry integration requires separate network validation.
+6. A SharePoint site and two users with different access to a known document for customer validation.
 
-### 1. Gateway Entra app (confidential client, for OBO)
-Register an Entra app for the gateway:
-- **Expose an API** with a scope (e.g. `access_as_user`) — Foundry requests this scope; the token it
-  gets has the gateway as its audience so the gateway can OBO it.
-- Add the **delegated downstream permissions** each provider needs (Retrieval API →
-  `Files.Read.All`, `Sites.Read.All`), grant **admin consent**.
-- Create a **client secret**.
-Set `GATEWAY_TENANT_ID` / `GATEWAY_CLIENT_ID` / `GATEWAY_CLIENT_SECRET`.
+Placeholders used below: `<GATEWAY_HOST>`, `<TENANT_ID>`, `<GATEWAY_APP_ID>`.
 
-### 2. Deploy the gateway
-Host `server/` anywhere **Foundry can reach**. The MCP endpoint is served at `…/mcp/`.
+## Deploy
 
-> **Network placement (important for private Foundry).** Foundry's runtime makes the outbound MCP
-> call to the gateway, so the gateway must be reachable from the Foundry project's egress — either a
-> public endpoint the connection can call (App Service / Container Apps / Function), or a host in / peered
-> to the Foundry VNet. This is the same reachability the Work IQ / Databricks Genie MCP connections
-> rely on. The gateway also needs outbound access to **Entra + Microsoft Graph**. Note this is a
-> **separate** path from the APIM bridge that carries Teams↔private‑Foundry activity traffic — the two
-> operate at different layers and don't overlap.
+### Configure and host the server
 
-### 3. Foundry OAuth2 identity‑passthrough connection
-Create a Foundry **MCP connection** (same shape as `AzureDatabricksGenieOBO` / `workiq-conn`):
-- `server_url` = `https://<gateway-host>/mcp/`
-- **OAuth2** with Entra endpoints:
-  `https://login.microsoftonline.com/<tenant>/oauth2/v2.0/authorize` and `.../token`
-- client id/secret of the gateway app, scope `api://<gateway-app-id>/access_as_user`.
-Add it to your hosted agent's toolbox. On first use, the user gets a one‑time **consent card** (in
-Teams, via the auto‑bot) — exactly like Databricks Genie today.
+Use [server/Dockerfile](server/Dockerfile) and [server/requirements.txt](server/requirements.txt) to
+build the server image for App Service or Container Apps. Configure the host's ingress for port
+`8000` (or `PORT`) and publish the HTTPS MCP endpoint at `/mcp/`. Keep secrets in the host's secret
+store or Key Vault references; do not embed them in the image or source control.
 
-The agent side is just an MCP tool pointed at the connection (from karpikpl's `agent_v2`):
-```python
-mcp_tool = MCPTool(
-    server_label="obo_gateway",
-    server_url="https://<gateway-host>/mcp",
-    project_connection_id="<connection-name>",   # enables OAuth identity passthrough
-    require_approval="always",                    # user approves each tool call
-)
-```
-Handle the `oauth_consent_request` output item (open its `consent_link`) on first run, then the
-`mcp_approval_request` loop — the same pattern the Databricks/Work IQ agents already use.
+| Variable | Value / purpose |
+| --- | --- |
+| `GATEWAY_TENANT_ID` / `GATEWAY_CLIENT_ID` | Gateway app tenant and client ID |
+| `GATEWAY_CLIENT_SECRET` | Secret-store reference for confidential-client OBO; leave empty only for configured federation |
+| `GATEWAY_MI_CLIENT_ID` | User-assigned managed identity client ID for federation; omit to use the host's default identity |
+| `VERIFY_TOKENS` | Keep `true` for deployed endpoints |
+| `REQUIRED_SCOPES` | `access_as_user` |
+| `SERVER_URL` | `https://<GATEWAY_HOST>` for protected-resource metadata |
+| `ENABLED_PROVIDERS` | `whoami,copilot_retrieval`; restrict diagnostics to authorized users |
+| `SHAREPOINT_SITE_URL` | Target site's full URL; leaving it empty removes the site filter |
+| `RETRIEVAL_API_URL` | `https://graph.microsoft.com/v1.0/copilot/retrieval` |
+| `MAX_RESULTS` | Retrieval result cap; default `10` |
 
-## Test
-Ask the agent to **call `whoami`** first — it returns your name/upn/oid with **no downstream call**,
-proving the passthrough delivers a per‑user token. Then ask a SharePoint question for the real
-`sharepoint_retrieve` path. Diagnostics: `OBO failed … (AADSTS65001)` (consent missing — grant admin
-consent on the gateway app), `403 … Files.Read.All/Sites.Read.All` (gateway app missing Graph perms),
-`403 … valid license` (user not Copilot‑licensed / no Retrieval paygo — **licensing gate, unchanged**).
+### Create the connection and Toolbox
 
-## Production hardening (from the peer samples)
-- **Secret-less (implemented).** Leave `GATEWAY_CLIENT_SECRET` empty and set `GATEWAY_MI_CLIENT_ID`
-  to a user-assigned managed identity. Add a **federated credential** on the gateway app that trusts
-  that MI (issuer = the MI's OIDC issuer, subject = the MI), and the gateway uses the MI token as its
-  client assertion for OBO — no secret stored (the `alisoliman/mcp-obo` pattern, via MSAL's
-  regenerative `client_assertion` callback).
-- **Verify tokens** — already on (`VERIFY_TOKENS=true`): audience/issuer/`access_as_user` scope.
-- **OBO caching** — MSAL caches by assertion hash, so repeat calls in a session don't re-hit Entra.
-- **Origin/DNS-rebinding check** — add if you expose the endpoint to browsers (alisoliman ships one).
+Follow the [Toolbox agent setup](../toolbox-agent/README.md) to create the OAuth2
+identity-passthrough connection and register its generated redirect URI on the gateway app.
 
-## Caveats
-- Downstream **licensing still applies** (Retrieval API → Copilot license/paygo).
-- Preview: MCP tools + OAuth2 connections in Foundry are preview.
-- This is a starting point, not a hardened deployment — see **Production hardening** above.
+| Connection field | Value |
+| --- | --- |
+| MCP endpoint | `https://<GATEWAY_HOST>/mcp/` |
+| Authorization URL | `https://login.microsoftonline.com/<TENANT_ID>/oauth2/v2.0/authorize` |
+| Token URL | `https://login.microsoftonline.com/<TENANT_ID>/oauth2/v2.0/token` |
+| OAuth client | Gateway app ID and securely supplied client secret |
+| Scopes | `api://<GATEWAY_APP_ID>/access_as_user` and `offline_access` |
+
+The [Path A agent](../toolbox-agent/README.md) uses **`FoundryToolbox` + `ResponsesHostServer`**,
+not a raw MCP client or local header-based OBO. Its Toolbox configuration refers to
+`SharePointRetrievalOBO`; the SDK forwards the platform call context and handles consent with the
+hosting integration. Tool approval (`require_approval`) and OAuth consent are separate: setting
+tool approval to `never` does **not** remove the user's OAuth consent requirement.
+
+### Validate user identity and retrieval
+
+Use the [two-user validation checklist](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path).
+As each user, call `whoami` and inspect the actual tool output, then call `sharepoint_retrieve`
+with the same document-specific query. The no-access user must receive no protected extracts or summary.
+The [per-user gateway client](client/validate_gateway_user.py) is a direct control; it does not
+replace validation through Teams and Toolbox. Keep bearer tokens out of diagnostics.
+
+### Operational safeguards
+
+- Keep token verification enabled and reject invalid issuer, audience, expiry, or scopes.
+- Review token-cache isolation and credential rotation; do not treat caching as proof of user isolation.
+- For secretless gateway OBO, configure a federated credential matching the managed identity's token
+  issuer, subject, and token-exchange audience. This does not remove the OAuth connection's own
+  confidential-client credential requirement.
+- Restrict diagnostic access, redact sensitive errors and headers, and add appropriate rate limiting
+  and browser-origin protections for your hosting model.
+- MCP/OAuth integrations include preview features. This sample requires security and operational review
+  before production use.
+
+## Publish to Teams
+
+Publish the [Toolbox agent](../toolbox-agent/README.md#publish-to-teams), not the gateway. The auto-bot
+can surface **tool OAuth consent**; this is not silent Teams SSO. Validate private-network changes
+separately from the public-project starting configuration.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+| --- | --- |
+| `401` before a tool runs | Check issuer, gateway audience, token version, expiry, and `access_as_user`. Do not disable token verification to bypass the error. |
+| `AADSTS65001` | Check delegated permissions and tenant admin consent for the gateway app. |
+| Redirect URI mismatch | Register the connection's exact generated redirect URI on the gateway app. |
+| `403` from Graph | Check delegated scopes, consent, user entitlement, and SharePoint permissions separately; a `403` alone does not prove trimming. |
+| No hits for either user | Check the configured site filter and use a query matching an indexed document. Establish a positive control first. |
+| Toolbox cannot connect | Validate the service's route to the gateway plus gateway egress to Entra and Graph; APIM's inbound route is separate. |
+
+## Next steps
+
+- [Hosted Toolbox agent](../toolbox-agent/README.md)
+- [Path comparison and customer validation](../../../../../guides/per-user-sharepoint-obo-teams-decision-matrix.md)
+- [Copilot Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview)
