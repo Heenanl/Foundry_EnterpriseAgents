@@ -32,7 +32,7 @@ Neither a managed identity nor a user ID alone supplies delegated SharePoint aut
 3. Microsoft 365 Copilot licenses or applicable **Retrieval API pay-as-you-go** entitlement. Pay-as-you-go requires at least one Microsoft 365 Copilot license in the tenant.
 4. A same-tenant Entra application with delegated Graph permissions and admin consent, as described in the selected path. Admin consent does not grant users additional SharePoint permissions.
 5. **Foundry Agent Consumer** for the invoking principal at the narrowest supported agent scope (project scope only when needed); **Foundry User** for the agent identity's project model access.
-6. Network access for every hop. Path A targets a public Foundry project; private-network/APIM integration requires separate validation. For Path B, a private endpoint with `publicNetworkAccess=Enabled` does not establish private-only operation.
+6. Network access for every hop. Path A targets a public Foundry project; private-network integration requires separate validation. For Path B, a private endpoint with `publicNetworkAccess=Enabled` does not establish private-only operation.
 
 ## Deploy
 

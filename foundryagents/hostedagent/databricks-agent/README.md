@@ -22,8 +22,8 @@ flowchart LR
     U -.->|first-time Databricks OAuth consent| GEN
 ```
 
-Publishing to Teams goes through the repo's APIM bridge like any hosted agent; the bridge is
-auth-transparent (consent + OBO happen server-side).
+Publishing to Teams uses the repo's native Microsoft 365 route — no bridge required. The activity
+transport is auth-transparent: consent and OBO happen server-side.
 
 ## Prerequisites
 
@@ -37,8 +37,7 @@ auth-transparent (consent + OBO happen server-side).
    User** + **Foundry Agent Consumer** on the project.
 
 Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<workspace-host>`, `<space-id>`, `<DATABRICKS_OAUTH_CLIENT_ID>` / `<DATABRICKS_OAUTH_SECRET>`,
-`<APIM_NAME>`.
+`<workspace-host>`, `<space-id>`, `<DATABRICKS_OAUTH_CLIENT_ID>` / `<DATABRICKS_OAUTH_SECRET>`.
 
 ## Option 1: Azure Developer CLI (`azd`)
 
@@ -99,13 +98,16 @@ the tables and verify the data isn't returned.
 
 ## Publish to Teams
 
-The Foundry auto-bot is preserved; publish through the repo's APIM bridge:
+The Foundry auto-bot is preserved; publish over the native Microsoft 365 route:
 
 ```powershell
 ./scripts/Publish-AgentToTeams.ps1 -ResourceGroup <RESOURCE_GROUP> `
   -AgentName agent-framework-agent-databricks `
-  -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> -ApimName <APIM_NAME>
+  -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> -UseM365PublicEndpoint
 ```
+
+If this project still fronts Foundry with API Management, pass `-ApimName <APIM_NAME>` instead — see
+the [API Management appendix](../../../README.md#appendix--api-management-bridge).
 
 Open the agent in Teams, complete the first-time Databricks sign-in/consent, and ask.
 

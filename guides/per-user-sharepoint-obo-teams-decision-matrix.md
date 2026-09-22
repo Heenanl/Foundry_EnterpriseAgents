@@ -19,8 +19,8 @@ connection** → the **MCP-OBO gateway** → Copilot Retrieval. Foundry renders 
 consent card in Teams and brokers the user's token server-side. Keeps the **Foundry auto-bot** (no
 custom bot). The agent uses **`FoundryToolbox` + `ResponsesHostServer`**, not
 `x-client-user-token` or a local OBO fallback. The documented starting configuration is a **public**
-Foundry project. Private-network/APIM operation requires separate end-to-end validation; the inbound
-bridge does not establish outbound Toolbox-to-gateway connectivity.
+Foundry project. Private-network operation requires separate end-to-end validation; opening the
+inbound Microsoft 365 route does not establish outbound Toolbox-to-gateway connectivity.
 
 ```mermaid
 flowchart LR
@@ -73,16 +73,16 @@ validate the bot-to-Foundry route with the intended public-access settings.
 | Teams sign-in | Foundry-managed interactive **tool OAuth consent** | Teams SSO with interactive fallback |
 | Delegated retrieval | Gateway exchanges the OAuth-passthrough user token | Agent exchanges the explicitly forwarded user token |
 | Isolation requirement | Validate authenticated tool identity, retrieval outputs, and user sessions | Validate token handling, retrieval outputs, and user sessions |
-| Network boundary | Public-project starting configuration; private/APIM integration requires separate validation | Bot must reach Foundry; private-only routing requires separate validation |
+| Network boundary | Public-project starting configuration; private-network integration requires separate validation | Bot must reach Foundry; private-only routing requires separate validation |
 | Caller authorization | **Foundry Agent Consumer** for callers at the narrowest supported agent/project scope; verify endpoint policy rather than assuming `BotServiceRbac` removes grants | Bot MI has **Foundry Agent Consumer** on each allowed agent; user token is separate |
 | Custom bot registration | **None** (Foundry auto-bot) | **One shared** bot (never per-agent) |
-| APIM required | No for a public project; separate inbound bridge option for private endpoints | Not for OBO; bot still needs an authorized network route to Foundry |
+| APIM required | **No** — a private agent admits Teams traffic with `enable_m365_public_endpoint` | Not for OBO; bot still needs an authorized network route to Foundry |
 | Agent style | Agent Framework container (`FoundryToolbox` + `ResponsesHostServer`) + gateway | Bring-your-own container (in-code OBO) |
 | Other downstream tools | Validate each connection and provider's delegated-auth behavior separately | Requires a compatible delegated flow and additional implementation |
 | Token handling | Foundry brokers tool credentials; gateway handles OBO tokens | Bot Service manages sign-in; bot forwards the assertion and agent handles OBO tokens |
 | Output quality | Native Agent Framework **inline citations** | Model synthesis + **Sources** footer |
 | Setup complexity | Lower (connection + toolbox) | Higher (bot + Bot OAuth connection + manifest) |
-| Moving parts to operate | Foundry connection, Toolbox, gateway, auto-bot; APIM only if using the private bridge | App Service bot, Bot registration, Teams manifest, OBO app |
+| Moving parts to operate | Foundry connection, Toolbox, gateway, auto-bot | App Service bot, Bot registration, Teams manifest, OBO app |
 
 ## Pros / cons
 
@@ -144,7 +144,7 @@ validate the bot-to-Foundry route with the intended public-access settings.
   invalid credentials fail closed and that changing agents does not expose another user's context.
   In a non-production environment, validate permission changes after expected propagation delays.
 7. For private-only deployment, repeat with public access disabled and the intended DNS/egress routes.
-  Validate Toolbox/gateway reachability separately from the inbound Teams bridge. A public-path pass
+  Validate Toolbox/gateway reachability separately from the inbound Teams route. A public-path pass
   is not evidence for private-only operation.
 8. Stop rollout on unexpected identities or content. Revalidate after changes to permissions,
   consent, SDKs, agent versions, session handling, token caches, or networking. Passing this checklist

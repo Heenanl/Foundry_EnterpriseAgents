@@ -46,9 +46,10 @@ flowchart LR
 
 1. Follow the [gateway setup](obo-gateway/README.md).
 2. Create the connection and Toolbox, then deploy the [hosted agent](toolbox-agent/README.md).
-3. Use a **public** Foundry project for the documented starting configuration. Private-network/APIM
+3. Use a **public** Foundry project for the documented starting configuration. Private-network
   operation is outside this sample's validated scope and requires separate integration validation;
-  the inbound APIM bridge does not establish outbound Toolbox-to-gateway reachability.
+  opening the inbound Microsoft 365 route does not establish outbound Toolbox-to-gateway
+  reachability.
 
 ## Publish to Teams
 

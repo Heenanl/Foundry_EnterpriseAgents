@@ -1,7 +1,7 @@
-# Tests — Foundry → Teams Bridge
+# Tests
 
-Verifies the APIM bridge routes correctly to the **private** Foundry activity endpoint, and that the
-Microsoft 365 public-endpoint patch preserves an agent's existing configuration.
+Offline checks for the Microsoft 365 public-endpoint patch, plus optional routing checks for the
+[API Management bridge](../README.md#appendix--api-management-bridge).
 
 ## Endpoint patch checks (offline)
 
@@ -17,7 +17,13 @@ so the tests assert that every existing protocol and scheme survives the patch, 
 added when missing, that a single Bot Service scheme stays authoritative, and that the flag can be
 rolled back.
 
-## Setup
+## Bridge routing checks (optional)
+
+Only needed if you run the optional
+[API Management bridge](../README.md#appendix--api-management-bridge). Agents published over the
+native Microsoft 365 route do not use these.
+
+### Setup
 
 ```powershell
 # From the repo root
@@ -26,7 +32,7 @@ python -m venv .venv
 pip install -r tests/requirements.txt
 ```
 
-## Configure
+### Configure
 
 ```powershell
 Copy-Item tests/.env.template tests/.env
@@ -42,7 +48,7 @@ Get-Content tests/.env | Where-Object { $_ -and $_ -notmatch '^\s*#' } | ForEach
 }
 ```
 
-## Run
+### Run
 
 ```powershell
 python tests/test_bridge.py
@@ -55,7 +61,7 @@ pip install pytest
 pytest tests/test_bridge.py -v
 ```
 
-## Interpreting results
+### Interpreting results
 
 | Status | Meaning | Result |
 |---|---|---|

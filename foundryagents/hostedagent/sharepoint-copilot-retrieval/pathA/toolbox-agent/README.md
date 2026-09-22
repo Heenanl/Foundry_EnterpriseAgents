@@ -31,8 +31,9 @@ flowchart LR
 ```
 
 The sign-in experience is **interactive tool OAuth consent**, not silent Teams SSO. The starting
-configuration uses a **public** Foundry project. Private-network/APIM operation requires separate
-end-to-end validation: the inbound bridge and outbound Toolbox-to-gateway call are different routes.
+configuration uses a **public** Foundry project. Private-network operation requires separate
+end-to-end validation: the inbound Teams route and the outbound Toolbox-to-gateway call are different
+paths, and opening the Microsoft 365 route does not establish gateway reachability.
 
 ## Prerequisites
 
@@ -51,8 +52,8 @@ end-to-end validation: the inbound bridge and outbound Toolbox-to-gateway call a
    (which needs ≥1 Copilot license in the tenant) — otherwise the tool returns `403 … valid license`.
 
 Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<GATEWAY_HOST>` (deployed gateway host), `<GATEWAY_APP_ID>`, `<TENANT_ID>`,
-`<APIM_NAME>` (APIM bridge). Supply the gateway secret through a secure local environment variable
+`<GATEWAY_HOST>` (deployed gateway host), `<GATEWAY_APP_ID>`, `<TENANT_ID>`. Supply the gateway
+secret through a secure local environment variable
 named `GATEWAY_CLIENT_SECRET`; do not paste credentials into documentation or command history.
 
 ## Option 1: Azure Developer CLI (`azd`)
@@ -145,18 +146,21 @@ verify it isn't returned.
 
 ## Publish to Teams
 
-The Foundry auto-bot is preserved. For a **public** project, use the repository publisher without
-`-ApimName`. For a private project using the APIM bridge, run this from the **repository root**:
+The Foundry auto-bot is preserved. Run this from the **repository root**:
 
 ```powershell
 ./scripts/Publish-AgentToTeams.ps1 -ResourceGroup <RESOURCE_GROUP> `
   -AgentName agent-framework-agent-sharepoint-copilot-retrieval `
-  -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> -ApimName <APIM_NAME>
+  -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> -UseM365PublicEndpoint
 ```
 
-For a public project, omit `-ApimName` from that command. For private deployment, validate the
-bridge, Toolbox reachability, and gateway egress independently before rollout. If the identity
-already has a bot, reuse its name with `-BotName`. Tenant publication requires admin approval.
+For a **public** project, omit `-UseM365PublicEndpoint` — the publish API enables the activity
+protocol on its own. If the project still fronts Foundry with API Management, pass
+`-ApimName <APIM_NAME>` instead; see the
+[API Management appendix](../../../../../README.md#appendix--api-management-bridge). For private
+deployment, validate the inbound Teams route, Toolbox reachability, and gateway egress independently
+before rollout. If the identity already has a bot, reuse its name with `-BotName`. Tenant publication
+requires admin approval.
 
 Open the agent in Teams, complete consent as required, and ask.
 
