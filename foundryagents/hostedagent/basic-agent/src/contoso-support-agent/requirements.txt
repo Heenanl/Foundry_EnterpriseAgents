@@ -1,0 +1,8 @@
+# Versions exercised together by the September 2026 Responses tests.
+agent-framework-core==1.18.0
+agent-framework-foundry==1.13.0
+agent-framework-foundry-hosting==1.0.0b260910
+azure-identity
+
+# debugpy enables local debugging of this agent with the Foundry Toolkit VS Code extension.
+debugpy

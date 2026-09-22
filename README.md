@@ -6,20 +6,30 @@ natively, so **no gateway, proxy, or API Management bridge is required**.
 
 ## Quickstart
 
-With a private Foundry project and an agent already created, publishing is one command:
+**1. Deploy an agent.** New to this repo? Start with the
+[basic agent](foundryagents/hostedagent/basic-agent/README.md) — a minimal hosted agent with no tools
+or connections:
+
+```powershell
+cd foundryagents/hostedagent/basic-agent
+azd up
+```
+
+**2. Publish it to Teams.** From the repository root:
 
 ```powershell
 ./scripts/Publish-AgentToTeams.ps1 `
     -ResourceGroup <RESOURCE_GROUP> `
-    -AgentName <AGENT_NAME> `
+    -AgentName contoso-support-agent `
     -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> `
     -UseM365PublicEndpoint
 ```
 
 This creates the Azure Bot and Teams channel, admits Microsoft 365 traffic to the agent's Activity
-Protocol route, and publishes the agent to the store. Open the agent in Teams and send it a message.
+Protocol route, and publishes it to the agent store. Open the agent in Teams and send it a message.
 
-Add `-WhatIf` to preview without changing anything. Full walkthrough: [Deploy](#deploy).
+Already have an agent? Skip step 1 and pass its name instead. Add `-WhatIf` to preview without
+changing anything. Full walkthrough: [Deploy](#deploy).
 
 ## How it works
 
@@ -33,32 +43,13 @@ flowchart LR
 
 Setting `agent_endpoint.protocol_configuration.activity.enable_m365_public_endpoint` tells Foundry to
 accept Microsoft 365 channel traffic on **only** the Activity Protocol route. The `responses`,
-`invocations`, `a2a`, and `mcp` protocols and the project APIs stay private, and the Foundry account
-keeps `publicNetworkAccess=Disabled`. Foundry owns the public entry point, TLS termination, and the
-Azure Bot Service and Microsoft 365 source IP ranges, so you deploy **no public ingress of your own**.
+`invocations`, `a2a`, and `mcp` protocols and the project APIs stay private, and the account keeps
+`publicNetworkAccess=Disabled`. Foundry owns the public entry point, TLS, and source IP filtering, so
+you deploy no public ingress of your own.
 
-The setting changes **network reachability only**. Keep `BotServiceRbac` or `BotServiceTenant` in
-`authorization_schemes`; source IP filtering does **not** replace token validation, tenant checks, or
-RBAC. `PATCH /agents/{agent}` **replaces** the whole `protocol_configuration` and
-`authorization_schemes` bags, so
-[scripts/Enable-M365PublicEndpoint.ps1](scripts/Enable-M365PublicEndpoint.ps1) reads the agent first,
-re-sends every protocol and scheme it already had, and then verifies that nothing was dropped.
-
-Teams and Microsoft 365 remain **public-network products**. No Foundry setting makes the channel
-itself private.
-
-**Verified 2026-09-22 (`swedencentral`).** Controlled A/B against a restricted project
-(`networkAcls.defaultAction=Deny`, Azure Bot Service ranges **not** allowlisted), with the bot
-pointed straight at the agent's Activity Protocol route and APIM removed from the path:
-
-| `enable_m365_public_endpoint` | Result in Teams |
-| --- | --- |
-| `true` | Agent replies; `BotServiceRbac` sign-in still enforced |
-| `false` | No reply |
-
-Only the flag changed between the two runs, which rules out `networkAcls.bypass=AzureServices` as the
-cause. The agent's `responses` protocol kept serving throughout. Not yet retested with
-`publicNetworkAccess=Disabled`, which is the configuration the Microsoft Learn guidance describes.
+This changes **network reachability only** — keep `BotServiceRbac` or `BotServiceTenant` in
+`authorization_schemes` so callers are still authorized. Teams and Microsoft 365 are themselves
+public-network products; no Foundry setting makes the channel private.
 
 **Still need API Management?** Keep it for custom public-to-private ingress, non-Teams surfaces, or
 API-management concerns such as quotas and request shaping. See
@@ -98,6 +89,7 @@ own prerequisites and deployment steps.
 
 | Sample | What it shows |
 | --- | --- |
+| [Basic agent](foundryagents/hostedagent/basic-agent/README.md) | Minimal hosted agent, no tools — the fastest path to a working Teams publish. **Start here.** |
 | [SharePoint retrieval](foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) | Per-user, site-scoped SharePoint through the Copilot Retrieval API. **Path A** uses the native auto-bot with Toolbox OAuth consent; **Path B** uses a shared Teams SSO bot with explicit token forwarding. |
 | [Work IQ](foundryagents/hostedagent/sharepoint-agent-workiq/README.md) | Broad Microsoft 365 grounding through the Microsoft-hosted Work IQ MCP server, without site scoping. |
 | [Databricks](foundryagents/hostedagent/databricks-agent/README.md) | Databricks Genie through a Foundry Toolbox MCP connection. |
@@ -117,14 +109,14 @@ These preview retrieval samples do not certify production readiness or every net
 
 | Component | Purpose |
 | --- | --- |
+| [foundryagents/hostedagent/basic-agent](foundryagents/hostedagent/basic-agent/README.md) | Minimal hosted agent to deploy first |
 | [scripts/Publish-AgentToTeams.ps1](scripts/Publish-AgentToTeams.ps1) | Create the bot, open the Microsoft 365 route, and publish |
 | [scripts/Enable-M365PublicEndpoint.ps1](scripts/Enable-M365PublicEndpoint.ps1) | Admit or revoke Microsoft 365 / Teams traffic on an existing agent |
-| [scripts/M365AgentEndpoint.psm1](scripts/M365AgentEndpoint.psm1) | Build the merge patch without dropping protocols or schemes |
 | [infra/bot-service.bicep](infra/bot-service.bicep) | Azure Bot registration and Teams channel |
-| [scripts/Configure-TeamsSso-App.ps1](scripts/Configure-TeamsSso-App.ps1) | Entra setup for the Path B Teams SSO bot |
-| [scripts/Register-GatewayApp.ps1](scripts/Register-GatewayApp.ps1) | Entra setup for delegated MCP calls |
-| [tests/Test-M365AgentEndpoint.ps1](tests/Test-M365AgentEndpoint.ps1) | Offline regression tests for the merge patch |
+| [tests/Test-M365AgentEndpoint.ps1](tests/Test-M365AgentEndpoint.ps1) | Offline regression tests for the endpoint patch |
 | [deploy.ps1](deploy.ps1), [infra/main.bicep](infra/main.bicep), [APIM policy](apim-policies/foundry-activity-policy.xml), [scripts/Onboard-Agents.ps1](scripts/Onboard-Agents.ps1), [tests/test_bridge.py](tests/test_bridge.py) | Optional API Management bridge — see the [appendix](#appendix--api-management-bridge) |
+
+Each agent sample documents its own setup scripts.
 
 ---
 
