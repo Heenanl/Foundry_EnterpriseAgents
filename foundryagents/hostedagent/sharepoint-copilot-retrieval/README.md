@@ -5,13 +5,14 @@ signed-in user's permissions, and publishable to Microsoft Teams on the Foundry 
 bot. It reaches SharePoint through the repo's **[OBO gateway](obo-gateway/README.md)**.
 Agent Framework, Responses protocol.
 
-**Verified 2026-09-23 (`swedencentral`).** The steps below were run end to end from a clean start — a
-new gateway app registration, gateway, connection, Toolbox, and agent — then published to Teams over
-the [native Microsoft 365 route](../../../README.md) with **no API Management** in the path. Two users
-asked the same agent the same question: the one with site access received the document and its source
-link; the one without access received no results, and `whoami` returned each signed-in user. That run
-used its own connection and Toolbox names to avoid colliding with existing resources — the names in
-this README are the setup script's defaults, not requirements.
+**Verified 2026-09-23 (`swedencentral`, private project).** The steps below were run end to end from a
+clean start — a new gateway app registration, gateway, connection, Toolbox, and agent — then published
+to Teams over the [native Microsoft 365 route](../../../README.md) with **no API Management** in the
+path, on a project whose account, Storage, Search, and Cosmos DB are all reached over private
+endpoints. Two users asked the same agent the same question: the one with site access received the
+document and its source link; the one without access received no results, and `whoami` returned each
+signed-in user. That run used its own connection and Toolbox names to avoid colliding with existing
+resources — the names in this README are the setup script's defaults, not requirements.
 
 ## How it works
 
@@ -39,10 +40,20 @@ flowchart LR
 
 The sign-in experience is **interactive tool OAuth consent**, not silent Teams SSO, and each agent
 gets its own auto-bot. A retired sample showing silent SSO and one shared bot across agents is kept
-for reference in [deprecated/pathB](../../../deprecated/pathB/README.md). The documented starting
-configuration uses a **public** Foundry project; private-network operation requires separate
-end-to-end validation, because the inbound Teams route and the outbound Toolbox-to-gateway call are
-different paths — opening the Microsoft 365 route does not establish gateway reachability.
+for reference in [deprecated/pathB](../../../deprecated/pathB/README.md).
+
+### Private networking
+
+Two legs carry traffic and they lock down independently:
+
+- **Inbound** — Teams reaches the agent over the Microsoft 365 route. This survives
+  `publicNetworkAccess=Disabled`: with the route enabled, Teams replied normally while direct public
+  calls to the same project returned `403`. See the [deployment guide](../../../README.md).
+- **Outbound** — Foundry's Toolbox calls your gateway. This is egress from the project, so inbound
+  restrictions do not affect it; what matters is that the gateway is reachable from Foundry. The
+  sample's gateway is a Container App with external ingress. If you move it behind Private Link or an
+  internal-only ingress, give the project outbound access to it — enabling the Microsoft 365 route
+  does **not** establish gateway reachability.
 
 ## Prerequisites
 
