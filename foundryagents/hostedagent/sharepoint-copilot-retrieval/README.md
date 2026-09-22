@@ -51,9 +51,31 @@ Two legs carry traffic and they lock down independently:
   calls to the same project returned `403`. See the [deployment guide](../../../README.md).
 - **Outbound** — Foundry's Toolbox calls your gateway. This is egress from the project, so inbound
   restrictions do not affect it; what matters is that the gateway is reachable from Foundry. The
-  sample's gateway is a Container App with external ingress. If you move it behind Private Link or an
-  internal-only ingress, give the project outbound access to it — enabling the Microsoft 365 route
-  does **not** establish gateway reachability.
+  sample's gateway is a Container App with external ingress. Enabling the Microsoft 365 route does
+  **not** establish gateway reachability.
+
+### Running the gateway with no public ingress
+
+Agent Service supports
+[private MCP server endpoints](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol#public-and-private-mcp-server-endpoints),
+so the gateway does not have to be public. It requires Standard Agent Setup with
+[private networking](https://learn.microsoft.com/azure/foundry/agents/how-to/virtual-networks) and:
+
+1. A **dedicated MCP subnet** delegated to `Microsoft.App/environments`, separate from the agent
+   subnet — see the
+   [19-private-network-agent-tools](https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/19-private-network-agent-tools)
+   template.
+2. The gateway's Container Apps environment **injected into that subnet** with **internal-only
+   ingress**. A VNet is fixed at environment creation, so an existing public environment cannot be
+   converted — create a new one and redeploy.
+3. **Private DNS** resolution for the environment's default domain from the agent subnet. Unreachable
+   private MCP servers usually trace to a missing delegation or DNS, per the
+   [MCP auth troubleshooting table](https://learn.microsoft.com/azure/foundry/agents/how-to/mcp-authentication#troubleshooting).
+
+Two things still need to work outbound. The gateway performs the On-Behalf-Of exchange against
+`login.microsoftonline.com` and then calls the Retrieval API, so it needs egress to both; if you
+force-tunnel through a firewall, allow them. User consent is unaffected — the connection's authorize
+and token URLs point at Entra ID, not at the gateway, so no browser ever needs to reach it.
 
 ## Prerequisites
 
