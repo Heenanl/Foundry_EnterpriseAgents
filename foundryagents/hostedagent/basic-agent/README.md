@@ -94,4 +94,4 @@ network access — the publish API enables the activity protocol on its own.
 - Publish and verify — [repository README](../../../README.md)
 - Add per-user SharePoint retrieval — [sharepoint-copilot-retrieval](../sharepoint-copilot-retrieval/README.md)
 - Pick a tool-grounded sample — [guides/agent-tool-support-matrix.md](../../../guides/agent-tool-support-matrix.md)
-- A hardened variant of this host (tolerates transient history failures) — [Path A agent](../sharepoint-copilot-retrieval/pathA/toolbox-agent/agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py)
+- A hardened variant of this host (tolerates transient history failures) — [SharePoint retrieval agent](../sharepoint-copilot-retrieval/agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py)

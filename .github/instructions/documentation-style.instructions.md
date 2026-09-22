@@ -7,7 +7,7 @@ applyTo: "**/*.md"
 
 Apply these conventions to every `README.md` and `guides/*.md` in this repo so docs stay consistent
 and customer-shareable. Match the existing samples (e.g. `hostedagent/databricks-agent/README.md`,
-`hostedagent/sharepoint-copilot-retrieval/pathA/toolbox-agent/README.md`).
+`hostedagent/sharepoint-copilot-retrieval/README.md`).
 
 ## Structure — per-sample README
 

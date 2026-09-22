@@ -3,7 +3,7 @@
 Run this before rolling out any per-user retrieval agent. It checks that the agent retrieves **as the
 signed-in user**, and that a user without access receives nothing.
 
-Applies to [Path A](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md), the
+Applies to [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md), the
 supported per-user SharePoint route.
 
 ## Checklist
@@ -36,5 +36,5 @@ supported per-user SharePoint route.
 
 ## Next steps
 
-- Deploy the route — [Path A](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md)
+- Deploy the route — [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md)
 - Compare agent grounding options — [agent-tool-support-matrix.md](agent-tool-support-matrix.md)

@@ -3,7 +3,7 @@
 # real gateway host before creating the toolbox. Creating it straight from this file fails with
 # "Invalid URI: The hostname could not be parsed".
 #
-# Route for HOSTED agents: the OBO gateway (this repo's pathA/obo-gateway)
+# Route for HOSTED agents: the OBO gateway (this repo's obo-gateway)
 # behind a Foundry OAuth2 identity-passthrough connection. On first use the signed-in user
 # approves; Foundry then holds that user's token server-side and forwards it to the gateway,
 # which does the On-Behalf-Of exchange and calls the Microsoft 365 Copilot Retrieval API as

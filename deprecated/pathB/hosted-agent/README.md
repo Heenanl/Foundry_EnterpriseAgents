@@ -39,7 +39,7 @@ One bot registration can front **many** allowed agents using in-chat routing.
 
 The more "native" alternative is a Foundry hosted agent + a **Foundry Toolbox** wrapping an OAuth2
 identity-passthrough connection (Foundry shows an "Open sign-in link" card and brokers the token
-server-side; see [Path A](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md)). It keeps the Foundry auto-bot and needs no custom
+server-side; see [SharePoint retrieval](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md)). It keeps the Foundry auto-bot and needs no custom
 bot. Choose Path A when **interactive tool OAuth consent** is suitable; it is not silent Teams SSO.
 Choose Path B for shared routing and explicit user-token control. Teams SSO can still require
 interactive sign-in for consent, Conditional Access, or session renewal. See the

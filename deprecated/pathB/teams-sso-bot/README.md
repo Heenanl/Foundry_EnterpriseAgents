@@ -7,7 +7,7 @@ Copilot Retrieval API **as the user**, site-scoped — so results are permission
 
 ## How it works
 
-The sibling [Path A](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md) publishes on the **Foundry auto-bot** via an OAuth2
+The supported [SharePoint retrieval sample](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) publishes on the **Foundry auto-bot** via an OAuth2
 identity-passthrough connection and **interactive tool OAuth consent**. This bot instead provides
 **shared multiagent routing, Teams SSO, and explicit user-token forwarding**. SSO can be silent when
 consent and tenant policies permit; an interactive fallback may be required.

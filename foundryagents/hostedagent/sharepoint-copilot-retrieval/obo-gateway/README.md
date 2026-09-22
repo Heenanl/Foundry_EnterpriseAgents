@@ -40,7 +40,7 @@ validation for each new provider.
 ## Prerequisites
 
 1. A same-tenant Entra app exposing `access_as_user` and issuing version-2 access tokens for the
-  gateway audience. Use [scripts/Register-GatewayApp.ps1](../../../../../scripts/Register-GatewayApp.ps1)
+  gateway audience. Use [scripts/Register-GatewayApp.ps1](../../../../scripts/Register-GatewayApp.ps1)
   to configure the app; review its parameters before running it.
 2. Delegated Microsoft Graph **Files.Read.All** and **Sites.Read.All** permissions with tenant
   admin consent. Admin consent does not grant additional SharePoint access to users.
@@ -79,7 +79,7 @@ store or Key Vault references; do not embed them in the image or source control.
 
 ### Create the connection and Toolbox
 
-Follow the [Toolbox agent setup](../toolbox-agent/README.md) to create the OAuth2
+Follow the [agent setup](../README.md) to create the OAuth2
 identity-passthrough connection and register its generated redirect URI on the gateway app.
 
 | Connection field | Value |
@@ -90,7 +90,7 @@ identity-passthrough connection and register its generated redirect URI on the g
 | OAuth client | Gateway app ID and securely supplied client secret |
 | Scopes | `api://<GATEWAY_APP_ID>/access_as_user` and `offline_access` |
 
-The [Path A agent](../toolbox-agent/README.md) uses **`FoundryToolbox` + `ResponsesHostServer`**,
+The [hosted agent](../README.md) uses **`FoundryToolbox` + `ResponsesHostServer`**,
 not a raw MCP client or local header-based OBO. Its Toolbox configuration refers to
 `SharePointRetrievalOBO`; the SDK forwards the platform call context and handles consent with the
 hosting integration. Tool approval (`require_approval`) and OAuth consent are separate: setting
@@ -98,7 +98,7 @@ tool approval to `never` does **not** remove the user's OAuth consent requiremen
 
 ### Validate user identity and retrieval
 
-Use the [two-user validation checklist](../../../../../guides/verify-per-user-isolation.md).
+Use the [two-user validation checklist](../../../../guides/verify-per-user-isolation.md).
 As each user, call `whoami` and inspect the actual tool output, then call `sharepoint_retrieve`
 with the same document-specific query. The no-access user must receive no protected extracts or summary.
 The [per-user gateway client](client/validate_gateway_user.py) is a direct control; it does not
@@ -118,7 +118,7 @@ replace validation through Teams and Toolbox. Keep bearer tokens out of diagnost
 
 ## Publish to Teams
 
-Publish the [Toolbox agent](../toolbox-agent/README.md#publish-to-teams), not the gateway. The auto-bot
+Publish the [hosted agent](../README.md#publish-to-teams), not the gateway. The auto-bot
 can surface **tool OAuth consent**; this is not silent Teams SSO. Validate private-network changes
 separately from the public-project starting configuration.
 
@@ -135,6 +135,6 @@ separately from the public-project starting configuration.
 
 ## Next steps
 
-- [Hosted Toolbox agent](../toolbox-agent/README.md)
-- [Verify per-user isolation](../../../../../guides/verify-per-user-isolation.md)
+- [Hosted agent](../README.md)
+- [Verify per-user isolation](../../../../guides/verify-per-user-isolation.md)
 - [Copilot Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview)

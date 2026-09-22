@@ -37,8 +37,8 @@ flowchart LR
     U -.->|first-time OAuth consent| GW
 ```
 
-- Setup: [Toolbox agent](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/toolbox-agent/README.md)
-  and [MCP-OBO gateway](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md).
+- Setup: [Toolbox agent](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md)
+and [MCP-OBO gateway](../foundryagents/hostedagent/sharepoint-copilot-retrieval/obo-gateway/README.md).
 
 **Tool OAuth consent is not silent Teams SSO.** Tool approval settings and tenant admin consent
 are separate controls; neither proves which delegated user reaches the gateway.

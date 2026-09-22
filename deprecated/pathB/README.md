@@ -2,7 +2,7 @@
 
 > [!IMPORTANT]
 > **Deprecated — not part of the supported flow.** Use
-> [Path A](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md), which is
+> [SharePoint retrieval](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md), which is
 > verified end to end for per-user SharePoint retrieval in Teams and needs no custom bot.
 >
 > Path B is kept for reference only. It documents two things Path A does not provide: **silent Teams
@@ -61,7 +61,7 @@ SharePoint retrieval, not arbitrary downstream integrations.
 | Pattern | Where OBO runs | Best when |
 | --- | --- | --- |
 | **In-code per agent** (what this sample does) | Each agent embeds [obo.py](hosted-agent/agent/src/sharepoint-obo-responses/obo.py) | A handful of agents |
-| **Shared OBO broker / gateway** (future adaptation) | One service all agents call, using the [Path A gateway](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/obo-gateway/README.md) pattern with explicit per-user token forwarding | Many agents/tools — centralizes the secret, permissions, per-user token cache, and audit |
+| **Shared OBO broker / gateway** (future adaptation) | One service all agents call, using the [OBO gateway](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/obo-gateway/README.md) pattern with explicit per-user token forwarding | Many agents/tools — centralizes the secret, permissions, per-user token cache, and audit |
 
 As agents and tools grow, **evolve from in-code OBO to a shared broker**: move the `obo.py` logic
 behind one service so the OBO app secret, downstream permissions, token caching, and per-user audit
@@ -123,4 +123,4 @@ for each allowed agent. The token-forwarding mechanism does not by itself certif
 ## Next steps
 
 - [Path comparison](../per-user-sharepoint-obo-teams-decision-matrix.md)
-- [Path A: Foundry-managed tool consent](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md)
+- [SharePoint retrieval: Foundry-managed tool consent](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md)
