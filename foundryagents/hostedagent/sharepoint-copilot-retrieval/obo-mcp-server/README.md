@@ -27,7 +27,7 @@ flowchart LR
 The [server entry point](server/app.py) enforces inbound token verification before calling the
 [OBO client](server/obo.py). The [retrieval provider](server/providers/copilot_retrieval.py) supplies
 the downstream scopes and site filter. Other providers require their own delegated-access and
-authorization review; behavior of unrelated Work IQ or Databricks connections is not implied.
+authorization review; behavior of unrelated connections is not implied.
 
 ### Extending the gateway
 

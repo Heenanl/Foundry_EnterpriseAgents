@@ -20,9 +20,9 @@
       -UseM365PublicEndpoint  Foundry admits Microsoft 365 / Teams source IPs on the
                               agent's own Activity Protocol route. No APIM, no proxy.
                               Preferred when the bridge exists only to reach Teams.
-      -ApimName/-ApimGateway  The APIM bridge in this repo. Still needed for custom
-                              public-to-private ingress, non-Teams surfaces, or API
-                              management concerns.
+      -ApimName/-ApimGateway  The archived APIM bridge (deprecated/apim-bridge). Still
+                              usable for custom public-to-private ingress, non-Teams
+                              surfaces, or API management concerns.
 
     Idempotent: re-running updates the same bot. Republishing the SAME AppVersion is
     rejected by Foundry (increment -AppVersion to change user-facing metadata).
@@ -51,7 +51,8 @@
 .PARAMETER ApimGateway
     APIM gateway URL, e.g. https://apim-foundry-bridge.azure-api.net. If omitted,
     it is resolved from -ApimName. If neither is given, the bot endpoint is left on
-    the private Foundry host and you must run scripts/Onboard-Agents.ps1 afterwards.
+    the private Foundry host and you must run
+    deprecated/apim-bridge/scripts/Onboard-Agents.ps1 afterwards.
 
 .PARAMETER ApimName
     APIM service name (used to resolve the gateway URL when -ApimGateway is omitted).
@@ -193,7 +194,7 @@ elseif ($ApimGateway) {
 }
 else {
     $botEndpoint = "$resolvedHost$activityPath"
-    $routing     = 'private Foundry host (run Onboard-Agents.ps1 afterwards)'
+    $routing     = 'private Foundry host (run deprecated/apim-bridge/scripts/Onboard-Agents.ps1 afterwards)'
 }
 
 # ── Defaults derived from the agent ───────────────────────────────────────────
@@ -351,6 +352,6 @@ if ($PublishScope -eq 'Tenant') {
 }
 if (-not $ApimGateway -and -not $UseM365PublicEndpoint) {
     Write-Host ' Next         : open the Microsoft 365 route with -UseM365PublicEndpoint, or route the bot' -ForegroundColor Yellow
-    Write-Host '                through the APIM bridge with ./deploy.ps1 -OnboardOnly' -ForegroundColor Yellow
+    Write-Host '                through the APIM bridge with ./deprecated/apim-bridge/deploy.ps1 -OnboardOnly' -ForegroundColor Yellow
 }
 Write-Host " Find it in the agent store (~1 hr cache): Shared -> 'Your agents', Tenant -> 'Built by your org'." -ForegroundColor White

@@ -131,7 +131,7 @@ The Foundry auto-bot is preserved; publish over the native Microsoft 365 route (
 ```
 
 If this project still fronts Foundry with API Management, pass `-ApimName <APIM_NAME>` instead — see
-the [API Management appendix](../../../README.md#appendix--api-management-bridge).
+the [archived bridge](../../../deprecated/apim-bridge/README.md).
 
 Open the agent in Teams, complete the first-time sign-in/consent, and ask. If your agent subnet uses
 default-deny egress, allow `agent365.svc.cloud.microsoft`, `workiq.svc.cloud.microsoft`,
@@ -152,5 +152,5 @@ default-deny egress, allow `agent365.svc.cloud.microsoft`, `workiq.svc.cloud.mic
 
 - [Connect agents to Microsoft 365 with Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq)
 - [Use a toolbox with a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [How toolbox authentication works](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication)
-- Sibling routes: [`../databricks-agent`](../databricks-agent/README.md) · [`../sharepoint-copilot-retrieval`](../sharepoint-copilot-retrieval/README.md)
+- Sibling route: [`../sharepoint-copilot-retrieval`](../sharepoint-copilot-retrieval/README.md)
 - [Usage-based billing & Copilot Credits](https://learn.microsoft.com/microsoft-365/copilot/usage-based-billing-overview-copilot-credits)
