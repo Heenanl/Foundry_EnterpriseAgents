@@ -317,7 +317,7 @@ Thanks to **Piotr Karpala**, **Mauro Minella**, and **Genady Belenky** for their
 and reference implementations that informed this repository's Teams integration and
 delegated-access approach:
 
-- **Piotr Karpala** — technical collaboration and guidance on Foundry agents in Teams,
+- **[Piotr Karpala](https://github.com/karpikpl)** — technical collaboration and guidance on Foundry agents in Teams,
   delegated authentication, and authorization requirements. See the
   [Foundry hosted agent for Microsoft Teams](https://github.com/msft-mfg-ai/ai-foundry-deployment-options/tree/main/options-infra/foundry-teams-hosted)
   reference in **msft-mfg-ai/ai-foundry-deployment-options**, covering Teams integration,
