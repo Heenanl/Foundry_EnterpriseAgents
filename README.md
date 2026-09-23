@@ -94,7 +94,6 @@ own prerequisites and deployment steps.
 | [Basic agent](foundryagents/hostedagent/basic-agent/README.md) | Minimal hosted agent, no tools — the fastest path to a working Teams publish. **Start here.** |
 | [SharePoint retrieval](foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) | Per-user, site-scoped SharePoint through the Copilot Retrieval API, using the native auto-bot with Toolbox OAuth consent. |
 | [Work IQ](foundryagents/hostedagent/sharepoint-agent-workiq/README.md) | Broad Microsoft 365 grounding through the Microsoft-hosted Work IQ MCP server, without site scoping. |
-| [Databricks](foundryagents/hostedagent/databricks-agent/README.md) | Databricks Genie through a Foundry Toolbox MCP connection. |
 | [SharePoint grounding tool](foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) | Site-scoped grounding on a prompt agent rather than a hosted container. |
 | [Agent audit logging](observability/foundry-agent-audit/README.md) | Per-agent attribution in Log Analytics. |
 

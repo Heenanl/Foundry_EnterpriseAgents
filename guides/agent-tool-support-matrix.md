@@ -13,11 +13,10 @@ SharePoint, Work IQ, and MCP integrations include preview features.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | Not with app-only identity | Prompt route; check channel support | Delegated user context required | Site/folder | Copilot license or Retrieval API paygo | [SharePoint tool](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint) | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
 | 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Via publish | Delegated connection required | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq) | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
-| 3 | Databricks Genie remote MCP | Databricks Genie | Yes | Yes | Via publish | Do not assume per-user; shared connection credentials do not trim by Teams caller | Genie space | Databricks | [Genie in Foundry](https://learn.microsoft.com/azure/databricks/integrations/microsoft-foundry) | [Genie sample](../foundryagents/hostedagent/databricks-agent/README.md) |
-| 4 | SharePoint retrieval: Toolbox + OBO MCP server | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Toolbox](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [MCP](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol) · [Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview) | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
-| 5 | Basic prompt agent | Model deployment | Yes | Not this sample | Via publish | No retrieval | None | Model usage | [Prompt agent](https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent) | [Prompt source](../foundryagents/promptagent/promptagent.py) |
+| 3 | SharePoint retrieval: Toolbox + OBO MCP server | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Toolbox](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [MCP](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol) · [Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview) | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
+| 4 | Basic prompt agent | Model deployment | Yes | Not this sample | Via publish | No retrieval | None | Model usage | [Prompt agent](https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent) | [Prompt source](../foundryagents/promptagent/promptagent.py) |
 
-Two things the table cannot show. A successful answer from Work IQ or Genie does **not** demonstrate
+Two things the table cannot show. A successful answer from a remote connector does **not** demonstrate
 per-user trimming — verify the downstream caller identity yourself rather than inferring it from
 another connector's behavior. And the Retrieval API supports further filter expressions, but these
 samples configure a site `path` filter only; file-type or date filtering is an implementation change,
@@ -29,7 +28,6 @@ not a sample setting.
 | --- | --- | --- |
 | SharePoint grounding tool | Managed grounding with site/folder scope | Requires delegated context; not an app-only hosted-container route |
 | Work IQ | Broad Microsoft 365 context without a custom retrieval gateway | No site-specific scope; review connection-specific licensing and consent |
-| Databricks Genie | Structured-data queries within a Genie space | Independently verify downstream caller identity; a shared credential is not per-user OBO |
 | SharePoint retrieval (Toolbox + OBO MCP server) | Keeps the Foundry auto-bot; centralizes OBO in one server | Interactive tool OAuth consent and an extra service to operate |
 | Model-only prompt agent | No retrieval infrastructure | Cannot provide permission-trimmed enterprise grounding |
 

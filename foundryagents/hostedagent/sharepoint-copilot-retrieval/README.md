@@ -157,4 +157,4 @@ before rollout.
 - [Verify per-user isolation](../../../guides/verify-per-user-isolation.md)
 - [Microsoft 365 Copilot Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview)
 - [Use a toolbox with a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [How toolbox authentication works](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication)
-- Sibling samples: [Work IQ](../sharepoint-agent-workiq/README.md) · [Databricks](../databricks-agent/README.md)
+- Sibling sample: [Work IQ](../sharepoint-agent-workiq/README.md)

@@ -2,10 +2,10 @@
 """Generic OBO MCP server.
 
 Foundry connects to this MCP server via an OAuth2 identity-passthrough connection and forwards the
-signed-in user's token as the request's Authorization header (the same mechanism Work IQ / Databricks
-Genie use — so it works from a HOSTED agent published to Teams via the Foundry auto-bot, no custom
-Teams bot). For each MCP tool call, the gateway does an On-Behalf-Of exchange to the scopes the tool
-needs, then the provider calls the downstream API as the user.
+signed-in user's token as the request's Authorization header (the same mechanism Work IQ uses — so it
+works from a HOSTED agent published to Teams via the Foundry auto-bot, no custom Teams bot). For each
+MCP tool call, the gateway does an On-Behalf-Of exchange to the scopes the tool needs, then the
+provider calls the downstream API as the user.
 
 Add support for a new downstream tool (that lacks Foundry server-side OBO) by dropping a new module
 in providers/ — the OBO + MCP transport here is generic.
