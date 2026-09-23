@@ -1,5 +1,5 @@
 # Copyright (c) Microsoft. All rights reserved.
-"""Browser-free end-to-end validation of the MCP-OBO gateway.
+"""Browser-free end-to-end validation of the OBO MCP server.
 
 Acquires a REAL delegated user token for the gateway's `access_as_user` scope via the Azure CLI
 (which the gateway app pre-authorizes), then drives the gateway exactly as Foundry's OAuth2
@@ -39,6 +39,7 @@ async def main() -> None:
     token = _user_token(app_id)
 
     transport = StreamableHttpTransport(url, headers={"Authorization": f"Bearer {token}"})
+    async with Client(transport) as c:
         tools = [t.name for t in await c.list_tools()]
         print("tools:", tools)
 

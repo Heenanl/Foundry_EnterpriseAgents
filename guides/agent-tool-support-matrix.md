@@ -34,7 +34,7 @@ permission-trimming layer.
 ```mermaid
 flowchart LR
 U[Teams user] --> A[Auto-bot and Toolbox]
-A --> G[MCP-OBO gateway]
+A --> G[OBO MCP server]
 G --> R[Copilot Retrieval API]
 U --> M[Model-only prompt agent]
 ```
@@ -49,7 +49,7 @@ SharePoint, Work IQ, and MCP integrations include preview features.
 | 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | Not with app-only identity | Prompt route; check channel support | Delegated user context required | Site/folder | Copilot license or Retrieval API paygo | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
 | 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Via publish | Delegated connection required | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
 | 3 | Databricks Genie remote MCP | Databricks Genie | Yes | Yes | Via publish | Do not assume per-user; shared connection credentials do not trim by Teams caller | Genie space | Databricks | [Genie sample](../foundryagents/hostedagent/databricks-agent/README.md) |
-| 4 | SharePoint retrieval: Toolbox + MCP-OBO gateway | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
+| 4 | SharePoint retrieval: Toolbox + OBO MCP server | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
 | 5 | Basic prompt agent | Model deployment | Yes | Not this sample | Via publish | No retrieval | None | Model usage | [Prompt source](../foundryagents/promptagent/promptagent.py) |
 
 The Retrieval API supports additional filter expressions, but these samples configure a site

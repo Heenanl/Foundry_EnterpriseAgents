@@ -12,7 +12,7 @@ Toolbox and a shared Teams SSO bot that forwards a user token for in-code OBO. T
 samples; validate authorization and networking in your environment before rollout.
 
 The two paths share the same downstream (Microsoft 365 **Copilot Retrieval API**, site-scoped).
-Path A uses an **MCP-OBO gateway**; Path B performs OBO **inside the agent**, without that gateway.
+Path A uses an **OBO MCP server**; Path B performs OBO **inside the agent**, without that gateway.
 They differ in **how the user's identity reaches the retrieval call**.
 
 ---
@@ -20,7 +20,7 @@ They differ in **how the user's identity reaches the retrieval call**.
 ## Path A — Foundry Toolbox OAuth identity-passthrough (Foundry-managed sign-in)
 
 Hosted agent (Agent Framework) → a **Foundry Toolbox** wrapping an **OAuth2 identity-passthrough
-connection** → the **MCP-OBO gateway** → Copilot Retrieval. Foundry renders an *"Open sign-in link"*
+connection** → the **OBO MCP server** → Copilot Retrieval. Foundry renders an *"Open sign-in link"*
 consent card in Teams and brokers the user's token server-side. Keeps the **Foundry auto-bot** (no
 custom bot). The agent uses **`FoundryToolbox` + `ResponsesHostServer`**, not
 `x-client-user-token` or a local OBO fallback. The documented starting configuration is a **public**
@@ -31,14 +31,14 @@ inbound Microsoft 365 route does not establish outbound Toolbox-to-gateway conne
 flowchart LR
     U[Signed-in user] -->|prompt| A[Hosted agent<br/>toolbox-agent]
     A -->|agent token| TB[Toolbox MCP]
-    TB -->|forwards USER token<br/>OAuth2 passthrough| GW[OBO gateway<br/>obo-gateway]
+    TB -->|forwards USER token<br/>OAuth2 passthrough| GW[OBO MCP server<br/>obo-mcp-server]
     GW -->|OBO exchange| E[Entra ID]
     GW -->|as the user, site-scoped| RET[(Copilot Retrieval API)]
     U -.->|first-time OAuth consent| GW
 ```
 
 - Setup: [Toolbox agent](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md)
-and [MCP-OBO gateway](../foundryagents/hostedagent/sharepoint-copilot-retrieval/obo-gateway/README.md).
+and [OBO MCP server](../foundryagents/hostedagent/sharepoint-copilot-retrieval/obo-mcp-server/README.md).
 
 **Tool OAuth consent is not silent Teams SSO.** Tool approval settings and tenant admin consent
 are separate controls; neither proves which delegated user reaches the gateway.

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-# The MCP-OBO gateway connection (SharePointRetrievalOBO) and toolbox
+# The OBO MCP server connection (SharePointRetrievalOBO) and toolbox
 # (sharepoint-retrieval-tools) are created out-of-band via the portal/CLI (see
 # README) because the OAuth2 identity-passthrough connection needs the gateway
 # app's client id + secret and Entra authorize/token endpoints. This manifest
@@ -35,7 +35,7 @@ services:
                 - Streaming
                 - SharePoint
                 - Copilot Retrieval API
-                - MCP-OBO gateway
+                - OBO MCP server
         project: src/agent-framework-agent-sharepoint-copilot-retrieval
         language: python
         codeConfiguration:
@@ -45,7 +45,7 @@ services:
             - ai-project
         kind: hosted
         name: agent-framework-agent-sharepoint-copilot-retrieval
-        description: An Agent Framework hosted agent that answers questions grounded in a SharePoint site on behalf of the signed-in user, via the MCP-OBO gateway and the Copilot Retrieval API.
+        description: An Agent Framework hosted agent that answers questions grounded in a SharePoint site on behalf of the signed-in user, via the OBO MCP server and the Copilot Retrieval API.
         protocols:
             - protocol: responses
               version: 2.0.0

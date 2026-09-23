@@ -2,7 +2,7 @@
 
 A Foundry **hosted agent** that answers questions grounded in **one SharePoint site**, trimmed to each
 signed-in user's permissions, and publishable to Microsoft Teams on the Foundry auto-bot — no custom
-bot. It reaches SharePoint through the repo's **[OBO gateway](obo-gateway/README.md)**.
+bot. It reaches SharePoint through the repo's **[OBO MCP server](obo-mcp-server/README.md)**.
 Agent Framework, Responses protocol.
 
 **Verified 2026-09-23 (`swedencentral`, private project).** The steps below were run end to end from a
@@ -32,7 +32,7 @@ its OBO configuration.
 flowchart LR
     U[Signed-in user] -->|prompt| A[Hosted agent<br/>agent identity]
     A -->|agent token| TB[Toolbox MCP<br/>sharepoint-retrieval-tools]
-    TB -->|forwards USER token<br/>OAuth2 passthrough| GW[MCP-OBO gateway]
+    TB -->|forwards USER token<br/>OAuth2 passthrough| GW[OBO MCP server]
     GW -->|OBO exchange| E[Entra ID]
     GW -->|as the user, site-scoped| RET[(Copilot Retrieval API)]
     U -.->|first-time OAuth consent| GW
@@ -90,13 +90,13 @@ and token URLs point at Entra ID, not at the gateway, so no browser ever needs t
 
 ## Prerequisites
 
-1. The **MCP-OBO gateway deployed** and reachable from your Foundry project — see
-   [gateway setup](obo-gateway/README.md); register its Entra app with
-   [scripts/Register-GatewayApp.ps1](../../../scripts/Register-GatewayApp.ps1). **The SharePoint
+1. The **OBO MCP server deployed** and reachable from your Foundry project — see
+   [gateway setup](obo-mcp-server/README.md); register its Entra app with
+   [scripts/Register-McpServerApp.ps1](../../../scripts/Register-McpServerApp.ps1). **The SharePoint
    site(s) this agent can read are set on the gateway**, via its `SHAREPOINT_SITE_URL` environment
    variable — one URL, or several separated by commas. The agent passes only a query, so the scope
    is operator-controlled; see
-   [scoping retrieval](obo-gateway/README.md#scoping-retrieval-to-one-or-more-sites).
+   [scoping retrieval](obo-mcp-server/README.md#scoping-retrieval-to-one-or-more-sites).
 2. An existing Foundry project with a model deployment (e.g. `gpt-4.1`).
 3. **Python 3.12+**, PowerShell 7+, Azure CLI, and Azure Developer CLI with the Foundry extension.
 4. **Additional Azure resources:** an OAuth2 identity-passthrough connection and a Toolbox that wraps
@@ -236,7 +236,7 @@ with fresh, separate conversations in the target environment before rollout.
 | Agent returns no tools | Toolbox name/`TOOLBOX_NAME` mismatch, or no default version. Check `azd ai toolbox show sharepoint-retrieval-tools`. |
 | Consent URL every call | Consent not completed, or the connection token expired. Complete the consent URL. |
 | `401` at the gateway | Forwarded token isn't OBO-able — check the connection scope (`api://<GATEWAY_APP_ID>/access_as_user`) and that the gateway app issues v2 tokens. |
-| `403 … Files.Read.All/Sites.Read.All` | Gateway app missing/ungranted Graph delegated permissions — re-run `Register-GatewayApp.ps1`. |
+| `403 … Files.Read.All/Sites.Read.All` | Gateway app missing/ungranted Graph delegated permissions — re-run `Register-McpServerApp.ps1`. |
 | `403 … valid license` | User isn't Copilot-licensed and Retrieval API paygo isn't enabled — a licensing gate, not code. |
 | Startup / readiness fails | Ensure `enableHostedAgentVNext=true` and `AZURE_AI_MODEL_DEPLOYMENT_NAME` matches a real deployment. |
 | Tool calls ask for `x-client-user-token` | Wrong/old local-OBO implementation deployed. This sample uses `FoundryToolbox`; explicit header forwarding belonged to the retired shared-bot sample. |
@@ -244,7 +244,7 @@ with fresh, separate conversations in the target environment before rollout.
 
 ## Next steps
 
-- [OBO gateway setup](obo-gateway/README.md)
+- [OBO MCP server setup](obo-mcp-server/README.md)
 - [Verify per-user isolation](../../../guides/verify-per-user-isolation.md)
 - [Toolbox wiring checks](agent-framework-agent-with-foundry-toolbox-responses/tests/test_toolbox_wiring.py)
 - [Microsoft 365 Copilot Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview)

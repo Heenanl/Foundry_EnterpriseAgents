@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Creates the Foundry OAuth2 identity-passthrough CONNECTION to the MCP-OBO gateway and the TOOLBOX
+  Creates the Foundry OAuth2 identity-passthrough CONNECTION to the OBO MCP server and the TOOLBOX
   that wraps it — entirely via code (no portal clicks). Mirrors the official Foundry sample:
   https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/hosted-agents/SUPPORTED_TOOLBOX_SCENARIOS/tools/mcp-oauth-custom.md
 
@@ -13,14 +13,14 @@
 
 .NOTES
   Requires: az login (correct tenant), azd >= 1.27.1 with `azd ext install microsoft.foundry`.
-  The gateway must already be deployed (see ../../obo-gateway/README.md) and its Entra app
-  registered (scripts/Register-GatewayApp.ps1).
+  The gateway must already be deployed (see ../obo-mcp-server/README.md) and its Entra app
+  registered (scripts/Register-McpServerApp.ps1).
 #>
 [CmdletBinding()]
 param(
   [Parameter(Mandatory)][string]$ProjectEndpoint,          # https://<account>.services.ai.azure.com/api/projects/<project>
-  [Parameter(Mandatory)][string]$GatewayHost,              # e.g. my-obo-gateway.azurewebsites.net
-  [Parameter(Mandatory)][string]$GatewayAppId,             # gateway Entra app client id (Register-GatewayApp.ps1)
+  [Parameter(Mandatory)][string]$GatewayHost,              # e.g. my-obo-mcp-server.azurewebsites.net
+  [Parameter(Mandatory)][string]$GatewayAppId,             # gateway Entra app client id (Register-McpServerApp.ps1)
   [Parameter(Mandatory)][string]$GatewayClientSecret,      # gateway app secret
   [Parameter(Mandatory)][string]$SubscriptionId,
   [Parameter(Mandatory)][string]$ResourceGroup,

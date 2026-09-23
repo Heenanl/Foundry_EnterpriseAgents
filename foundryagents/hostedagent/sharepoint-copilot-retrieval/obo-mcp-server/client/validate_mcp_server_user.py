@@ -1,5 +1,5 @@
 # Copyright (c) Microsoft. All rights reserved.
-"""Per-user proof for the MCP-OBO gateway.
+"""Per-user proof for the OBO MCP server.
 
 Signs a SPECIFIC end user in via MSAL device-code flow (no password touches this process or
 the az session), acquires a REAL delegated token for the gateway's `access_as_user` scope,

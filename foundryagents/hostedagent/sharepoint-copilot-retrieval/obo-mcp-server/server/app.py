@@ -1,5 +1,5 @@
 # Copyright (c) Microsoft. All rights reserved.
-"""Generic MCP OBO gateway.
+"""Generic OBO MCP server.
 
 Foundry connects to this MCP server via an OAuth2 identity-passthrough connection and forwards the
 signed-in user's token as the request's Authorization header (the same mechanism Work IQ / Databricks
@@ -21,7 +21,7 @@ from config import Config
 from obo import Obo
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("mcp-obo-gateway")
+logger = logging.getLogger("obo-mcp-server")
 
 CONFIG = Config()
 
@@ -49,7 +49,7 @@ def _build_auth():
     )
 
 
-mcp = FastMCP("obo-gateway", auth=_build_auth(), mask_error_details=True)
+mcp = FastMCP("obo-mcp-server", auth=_build_auth(), mask_error_details=True)
 _obo = Obo(
     CONFIG.TENANT_ID,
     CONFIG.CLIENT_ID,

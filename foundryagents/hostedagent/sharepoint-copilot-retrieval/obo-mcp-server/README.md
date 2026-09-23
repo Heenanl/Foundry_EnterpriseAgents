@@ -1,4 +1,4 @@
-# MCP-OBO gateway for delegated SharePoint retrieval
+# OBO MCP server for delegated SharePoint retrieval
 
 A **lightweight, provider‑pluggable MCP server** that gives a **hosted** Foundry agent **per‑user
 (OBO)** access to downstream APIs while **keeping the Foundry auto‑published Teams bot** (no custom
@@ -11,7 +11,7 @@ calls the **Copilot Retrieval API**, using a configured SharePoint site filter.
 ```mermaid
 flowchart LR
     U([Teams user]) --> BOT[Foundry auto-bot<br/>unchanged] --> AG[Hosted agent]
-    AG -->|MCP tool call| GW["MCP-OBO gateway<br/>App Service or Container Apps"]
+    AG -->|MCP tool call| GW["OBO MCP server<br/>App Service or Container Apps"]
     F[Foundry OAuth2 identity-passthrough<br/>connection brokers the user token] -.->|Authorization: user token| GW
     GW -->|OBO exchange to provider scopes| E[Entra]
     GW -->|call downstream API as the user| D[(Downstream: Retrieval API / future tools)]
@@ -40,7 +40,7 @@ validation for each new provider.
 ## Prerequisites
 
 1. A same-tenant Entra app exposing `access_as_user` and issuing version-2 access tokens for the
-  gateway audience. Use [scripts/Register-GatewayApp.ps1](../../../../scripts/Register-GatewayApp.ps1)
+  gateway audience. Use [scripts/Register-McpServerApp.ps1](../../../../scripts/Register-McpServerApp.ps1)
   to configure the app; review its parameters before running it.
 2. Delegated Microsoft Graph **Files.Read.All** and **Sites.Read.All** permissions with tenant
   admin consent. Admin consent does not grant additional SharePoint access to users.
@@ -98,6 +98,69 @@ Path filters break silently if a site is renamed or moved, returning no results 
 error. Where that matters, filter on site IDs instead — see the
 [filterExpression reference](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/copilotroot-retrieval#examples).
 
+### Host it without a public endpoint
+
+Agent Service supports
+[private MCP server endpoints](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol#public-and-private-mcp-server-endpoints),
+so this server can run with no public entry point. It needs Standard Agent Setup with
+[private networking](https://learn.microsoft.com/azure/foundry/agents/how-to/virtual-networks). The
+commands below were verified end to end against a project with `publicNetworkAccess=Disabled`;
+substitute `<VNET>`, `<RESOURCE_GROUP>`, and your own names.
+
+A **dedicated MCP subnet**, separate from the agent subnet:
+
+```bash
+az network vnet subnet create -n mcp-subnet --vnet-name <VNET> -g <RESOURCE_GROUP> \
+  --address-prefixes 192.168.4.0/23 --delegations Microsoft.App/environments
+```
+
+A Container Apps environment **injected into that subnet**. A VNet is fixed at environment creation,
+so an existing public environment cannot be converted — create a new one:
+
+```bash
+az containerapp env create -n cae-mcp-private -g <RESOURCE_GROUP> --location <REGION> \
+  --infrastructure-subnet-resource-id <MCP_SUBNET_ID> --internal-only true
+```
+
+**Private DNS** so the agent subnet resolves the environment's default domain. Azure does not create
+this for you:
+
+```bash
+az network private-dns zone create -g <RESOURCE_GROUP> -n <ENV_DEFAULT_DOMAIN>
+az network private-dns record-set a add-record -g <RESOURCE_GROUP> -z <ENV_DEFAULT_DOMAIN> -n '*' -a <ENV_STATIC_IP>
+az network private-dns link vnet create -g <RESOURCE_GROUP> -z <ENV_DEFAULT_DOMAIN> \
+  -n link-agent-vnet -v <VNET> -e false
+```
+
+Then deploy the server with **`--ingress external`** on that internal environment:
+
+```bash
+az containerapp create -n obo-mcp-server -g <RESOURCE_GROUP> --environment cae-mcp-private \
+  --image <ACR>/obo-mcp-server:v1 --target-port 8000 --ingress external \
+  --system-assigned --registry-server <ACR> --registry-identity system
+```
+
+> [!IMPORTANT]
+> On an internal environment, `--ingress external` means **VNet-facing, not internet-facing** — the
+> environment's load balancer holds a private IP in your subnet and the FQDN stays absent from public
+> DNS. Use `--ingress internal` and the app is reachable only from *inside* the environment's own
+> service mesh: Foundry sits outside it, so tool discovery fails with `HTTP 404` from the load
+> balancer while the container reports healthy and serves correctly on localhost.
+
+`--ingress external` also drops the `.internal.` label from the FQDN. Point `SERVER_URL`, the
+connection `target`, and the toolbox `server_url` at the final name, and remember Foundry calls the
+URL on the **connection** — updating only the toolbox leaves the old address in use.
+
+The server still needs **egress** to `login.microsoftonline.com` for the OBO exchange and to the
+Retrieval API. Consent is unaffected: the connection's authorize and token URLs point at Entra ID, so
+no browser ever needs to reach this server.
+
+| Symptom | Cause / fix |
+| --- | --- |
+| `HTTP 404` enumerating tools, container healthy | App on `--ingress internal`; switch to `external` |
+| Connection/DNS error from Foundry | Missing private DNS zone, wildcard record, or VNet link |
+| Still calling the old host after a change | Connection `target` not updated; the toolbox alone is not enough |
+
 ### Create the connection and Toolbox
 
 Follow the [agent setup](../README.md) to create the OAuth2
@@ -122,7 +185,7 @@ tool approval to `never` does **not** remove the user's OAuth consent requiremen
 Use the [two-user validation checklist](../../../../guides/verify-per-user-isolation.md).
 As each user, call `whoami` and inspect the actual tool output, then call `sharepoint_retrieve`
 with the same document-specific query. The no-access user must receive no protected extracts or summary.
-The [per-user gateway client](client/validate_gateway_user.py) is a direct control; it does not
+The [per-user gateway client](client/validate_mcp_server_user.py) is a direct control; it does not
 replace validation through Teams and Toolbox. Keep bearer tokens out of diagnostics.
 
 ### Operational safeguards

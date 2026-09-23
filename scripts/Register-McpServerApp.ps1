@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-  Registers the Entra app for the MCP-OBO gateway and wires it for both Foundry OAuth2 passthrough
+  Registers the Entra app for the OBO MCP server and wires it for both Foundry OAuth2 passthrough
   and local end-to-end validation.
 
   Creates:
-    - App registration "mcp-obo-gateway" with Application ID URI api://<appId>
+    - App registration "obo-mcp-server" with Application ID URI api://<appId>
     - Exposed delegated scope: access_as_user  (what Foundry requests / the gateway requires)
     - Delegated Microsoft Graph perms: Files.Read.All, Sites.Read.All, User.Read  (+ admin consent)
     - Pre-authorized Azure CLI client, so `az account get-access-token --scope api://<appId>/access_as_user`
@@ -16,7 +16,7 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$DisplayName = "mcp-obo-gateway",
+  [string]$DisplayName = "obo-mcp-server",
   # Secrets are written here instead of the console. *.env is gitignored.
   [string]$EnvFilePath
 )
@@ -80,7 +80,7 @@ Patch-App $objectId @{
       value                   = "access_as_user"
       type                    = "User"
       isEnabled               = $true
-      adminConsentDisplayName = "Access the MCP-OBO gateway as the signed-in user"
+      adminConsentDisplayName = "Access the OBO MCP server as the signed-in user"
       adminConsentDescription = "Allows the gateway to call downstream APIs on behalf of the user."
       userConsentDisplayName  = "Access the gateway on your behalf"
       userConsentDescription  = "Allows the gateway to act on your behalf."

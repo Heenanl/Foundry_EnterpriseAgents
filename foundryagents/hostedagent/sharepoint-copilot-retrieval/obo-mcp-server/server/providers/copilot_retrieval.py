@@ -23,7 +23,7 @@ FILTER_EXPRESSION = " OR ".join(f'path:"{u}/"' for u in SITE_URLS)
 
 name = "copilot_retrieval"
 
-logger = logging.getLogger("mcp-obo-gateway")
+logger = logging.getLogger("obo-mcp-server")
 if FILTER_EXPRESSION:
     logger.info("copilot_retrieval scope: %d site(s) -> %s", len(SITE_URLS), FILTER_EXPRESSION)
 else:

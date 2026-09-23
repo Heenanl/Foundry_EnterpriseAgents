@@ -37,7 +37,7 @@ flowchart LR
 
 **Why two components:** this design obtains the Teams SSO token at a real Bot endpoint, then the
 hosted agent uses that token for OBO. Path A instead uses Foundry-managed tool OAuth; it does not
-need this header or bot. This path does **not** use an MCP-OBO gateway.
+need this header or bot. This path does **not** use an OBO MCP server.
 
 ### Scaling to many agents and tools
 
@@ -61,7 +61,7 @@ SharePoint retrieval, not arbitrary downstream integrations.
 | Pattern | Where OBO runs | Best when |
 | --- | --- | --- |
 | **In-code per agent** (what this sample does) | Each agent embeds [obo.py](hosted-agent/agent/src/sharepoint-obo-responses/obo.py) | A handful of agents |
-| **Shared OBO broker / gateway** (future adaptation) | One service all agents call, using the [OBO gateway](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/obo-gateway/README.md) pattern with explicit per-user token forwarding | Many agents/tools — centralizes the secret, permissions, per-user token cache, and audit |
+| **Shared OBO broker / gateway** (future adaptation) | One service all agents call, using the [OBO MCP server](../../foundryagents/hostedagent/sharepoint-copilot-retrieval/obo-mcp-server/README.md) pattern with explicit per-user token forwarding | Many agents/tools — centralizes the secret, permissions, per-user token cache, and audit |
 
 As agents and tools grow, **evolve from in-code OBO to a shared broker**: move the `obo.py` logic
 behind one service so the OBO app secret, downstream permissions, token caching, and per-user audit
