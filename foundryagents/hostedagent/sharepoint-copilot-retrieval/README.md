@@ -1,32 +1,19 @@
-# Per-user SharePoint retrieval from a Teams-published Foundry hosted agent
+# What this sample demonstrates
 
-A Foundry **hosted agent** that answers questions grounded in **one SharePoint site**, trimmed to each
-signed-in user's permissions, and publishable to Microsoft Teams on the Foundry auto-bot — no custom
-bot. It reaches SharePoint through the repo's **[OBO MCP server](obo-mcp-server/README.md)**.
-Agent Framework, Responses protocol.
-
-**Verified 2026-09-23 (`swedencentral`, private project).** The steps below were run end to end from a
-clean start — a new gateway app registration, gateway, connection, Toolbox, and agent — then published
-to Teams over the [native Microsoft 365 route](../../../README.md) with **no API Management** in the
-path, on a project whose account, Storage, Search, and Cosmos DB are all reached over private
-endpoints. Two users asked the same agent the same question: the one with site access received the
-document and its source link; the one without access received no results, and `whoami` returned each
-signed-in user. That run used its own connection and Toolbox names to avoid colliding with existing
-resources — the names in this README are the setup script's defaults, not requirements.
+A Foundry **hosted agent** that answers questions grounded in **one or more SharePoint sites**,
+trimmed to each signed-in user's permissions, and publishes to Microsoft Teams on the Foundry
+auto-bot — no custom bot. It reaches SharePoint through this repo's
+**[OBO MCP server](obo-mcp-server/README.md)**. Verified end-to-end against a private Foundry
+project. Agent Framework, Responses protocol.
 
 ## How it works
 
-A hosted container's **own agent identity** is distinct from the user's delegated credentials.
-This agent uses the official **`FoundryToolbox`**, **`FoundryChatClient`**, and **`ResponsesHostServer`**
-with resilient tasks. It calls a Toolbox wrapping an **OAuth2 identity-passthrough** connection:
-Foundry brokers the user's token server-side, the gateway does the **On-Behalf-Of** exchange and calls
-the **Microsoft 365 Copilot Retrieval API** as the user (site-scoped via `filterExpression`). See
-[agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py](agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py).
-
-The Toolbox URL is built explicitly from `FOUNDRY_PROJECT_ENDPOINT` and `TOOLBOX_NAME`; a stale
-`TOOLBOX_ENDPOINT` cannot select a different project. There is **no local OBO fallback**, no
-`x-client-user-token` requirement, and no `APP_OBO_*` secret in this agent. The gateway still needs
-its OBO configuration.
+A hosted container authenticates to Foundry with its **own agent identity** (app-only), which cannot
+read a user's SharePoint content. So the agent calls a **Foundry Toolbox** wrapping an **OAuth2
+identity-passthrough** connection: Foundry brokers the signed-in user's token server-side and forwards
+it to the OBO MCP server, which performs the **On-Behalf-Of** exchange and calls the **Microsoft 365
+Copilot Retrieval API** as that user, scoped by `filterExpression`. See
+[`main.py`](agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py).
 
 ```mermaid
 flowchart LR
@@ -38,152 +25,76 @@ flowchart LR
     U -.->|first-time OAuth consent| GW
 ```
 
-The sign-in experience is **interactive tool OAuth consent**, not silent Teams SSO, and each agent
-gets its own auto-bot. A retired sample showing silent SSO and one shared bot across agents is kept
-for reference in [deprecated/pathB](../../../deprecated/pathB/README.md).
+Sign-in is **interactive tool OAuth consent**, not silent Teams SSO, and each agent gets its own
+auto-bot. Publishing uses the repo's native Microsoft 365 route — no bridge required.
 
-### Private networking
-
-Two legs carry traffic and they lock down independently:
-
-- **Inbound** — Teams reaches the agent over the Microsoft 365 route. This survives
-  `publicNetworkAccess=Disabled`, retested 2026-09-23: with the route enabled, Teams replied normally
-  while direct public calls to the same project returned `403`. See the
-  [deployment guide](../../../README.md).
-- **Outbound** — Foundry's Toolbox calls your gateway. This is egress from the project, so inbound
-  restrictions do not affect it; what matters is that the gateway is reachable from Foundry. The
-  sample's gateway is a Container App with external ingress. Enabling the Microsoft 365 route does
-  **not** establish gateway reachability.
-
-### Running the gateway with no public ingress
-
-Agent Service supports
-[private MCP server endpoints](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol#public-and-private-mcp-server-endpoints),
-so the gateway does not have to be public. It requires Standard Agent Setup with
-[private networking](https://learn.microsoft.com/azure/foundry/agents/how-to/virtual-networks) and:
-
-1. A **dedicated MCP subnet** delegated to `Microsoft.App/environments`, separate from the agent
-   subnet — see the
-   [19-private-network-agent-tools](https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/19-private-network-agent-tools)
-   template.
-2. The gateway's Container Apps environment **injected into that subnet** and created with
-   `--internal-only true`. A VNet is fixed at environment creation, so an existing public
-   environment cannot be converted — create a new one and redeploy.
-3. The **app's** ingress set to `--ingress external` on that internal environment. This still has no
-   public entry point: "external" means VNet-facing, and the environment's load balancer holds a
-   private IP in your subnet. Using `--ingress internal` limits the app to the environment's own
-   service mesh, and Foundry — which sits outside it — gets `HTTP 404` from the load balancer while
-   the container looks perfectly healthy. Switching to `external` also drops the `.internal.` label
-   from the FQDN, so update the connection target and toolbox `server_url` to match.
-4. **Private DNS** for the environment's default domain, linked to the agent subnet's VNet: a zone
-   named after the default domain, with a wildcard `A` record pointing at the environment's static
-   IP. Unreachable private MCP servers usually trace to a missing delegation or DNS, per the
-   [MCP auth troubleshooting table](https://learn.microsoft.com/azure/foundry/agents/how-to/mcp-authentication#troubleshooting).
-
-Verified on this project: with the gateway on an internal environment and the Foundry account at
-`publicNetworkAccess=Disabled`, Teams retrieved a document and its source link while the same
-endpoint returned `403` from outside the network.
-
-Two things still need to work outbound. The gateway performs the On-Behalf-Of exchange against
-`login.microsoftonline.com` and then calls the Retrieval API, so it needs egress to both; if you
-force-tunnel through a firewall, allow them. User consent is unaffected — the connection's authorize
-and token URLs point at Entra ID, not at the gateway, so no browser ever needs to reach it.
+**Private networking.** The two legs lock down independently. Inbound, the Teams route survives
+`publicNetworkAccess=Disabled`. Outbound, the Toolbox call to the MCP server is egress, so enabling
+the Microsoft 365 route does **not** by itself make the server reachable. The MCP server can run with
+no public endpoint at all — see
+[hosting it without a public endpoint](obo-mcp-server/README.md#host-it-without-a-public-endpoint).
 
 ## Prerequisites
 
-1. The **OBO MCP server deployed** and reachable from your Foundry project — see
-   [gateway setup](obo-mcp-server/README.md); register its Entra app with
-   [scripts/Register-McpServerApp.ps1](../../../scripts/Register-McpServerApp.ps1). **The SharePoint
-   site(s) this agent can read are set on the gateway**, via its `SHAREPOINT_SITE_URL` environment
-   variable — one URL, or several separated by commas. The agent passes only a query, so the scope
-   is operator-controlled; see
-   [scoping retrieval](obo-mcp-server/README.md#scoping-retrieval-to-one-or-more-sites).
-2. An existing Foundry project with a model deployment (e.g. `gpt-4.1`).
-3. **Python 3.12+**, PowerShell 7+, Azure CLI, and Azure Developer CLI with the Foundry extension.
-4. **Additional Azure resources:** an OAuth2 identity-passthrough connection and a Toolbox that wraps
-   it — created with the setup script under Option 1 (defaults `SharePointRetrievalOBO` and
-   `sharepoint-retrieval-tools`).
-5. **Roles (RBAC):** grant callers **Foundry Agent Consumer** at the narrowest supported agent scope;
-   use project scope only when required. Verify endpoint authorization rather than assuming tenant
-   publishing or `BotServiceRbac` removes caller RBAC. Grant the agent identity **Foundry User** at
-   project scope for model access; do not broaden caller roles to solve model authorization errors.
-6. **Licensing:** a **Microsoft 365 Copilot** license for the users, or **Retrieval API pay-as-you-go**
-   (which needs ≥1 Copilot license in the tenant) — otherwise the tool returns `403 … valid license`.
+1. The **[OBO MCP server](obo-mcp-server/README.md) deployed** and reachable from your Foundry
+   project, with its Entra app registered via
+   [`scripts/Register-McpServerApp.ps1`](../../../scripts/Register-McpServerApp.ps1). The
+   **SharePoint site(s) this agent can read are set there**, via `SHAREPOINT_SITE_URL` — one URL or
+   several separated by commas. The agent passes only a query, so the scope is operator-controlled.
+2. An existing Foundry project with a model deployment (e.g. `gpt-4.1`); **Python 3.12+**,
+   PowerShell 7+, Azure CLI.
+3. **Roles (RBAC):** **Foundry Agent Consumer** for callers at the narrowest supported agent scope,
+   and **Foundry User** for the agent identity's model calls at project scope. Tenant publishing and
+   `BotServiceRbac` do not remove caller RBAC.
+4. **Licensing:** a **Microsoft 365 Copilot** license per user, or **Retrieval API pay-as-you-go**
+   (needs ≥1 Copilot license in the tenant) — otherwise the tool returns `403 … valid license`.
+5. **Additional Azure resources:** the `SharePointRetrievalOBO` connection + `sharepoint-retrieval-tools`
+   toolbox — created in Option 1.
 
-Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<GATEWAY_HOST>` (deployed gateway host), `<GATEWAY_APP_ID>`, `<TENANT_ID>`. Supply the gateway
-secret through a secure local environment variable
-named `GATEWAY_CLIENT_SECRET`; do not paste credentials into documentation or command history.
+Placeholders: `<TENANT_ID>`, `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`,
+`<PROJECT>`, `<GATEWAY_HOST>`, `<GATEWAY_APP_ID>`. Pass the MCP server's client secret from a local
+environment variable; never paste it into a command line you keep.
 
 ## Option 1: Azure Developer CLI (`azd`)
 
-Use a current `azd` release compatible with the installed Foundry extension (at least 1.27.1;
-extension versions may require newer releases).
-
-```powershell
-azd ext install microsoft.foundry
-```
-
-```powershell
-azd auth login --tenant-id <TENANT_ID>
-```
-
-```powershell
-az login --tenant <TENANT_ID>
-```
+**Install:** `azd` 1.27.1+, then `azd ext install microsoft.foundry`; sign in with
+`azd auth login --tenant-id <TENANT_ID>` and `az login --tenant <TENANT_ID>`.
 
 ### Create the connection + toolbox (once)
 
-[setup/Create-Connection-And-Toolbox.ps1](setup/Create-Connection-And-Toolbox.ps1) creates the OAuth2
-identity-passthrough connection, registers Foundry's reply URL on the gateway app, and creates the
-toolbox — the *MCP OAuth Identity Passthrough* scenario from the
+[`setup/Create-Connection-And-Toolbox.ps1`](setup/Create-Connection-And-Toolbox.ps1) creates the
+OAuth2 identity-passthrough connection, registers Foundry's reply URL on the MCP server's app, and
+creates the toolbox — the *MCP OAuth Identity Passthrough* scenario from the
 [foundry-samples guide](https://github.com/microsoft-foundry/foundry-samples/blob/main/samples/python/hosted-agents/SUPPORTED_TOOLBOX_SCENARIOS/tools/mcp-oauth-custom.md):
 
 ```powershell
 ./setup/Create-Connection-And-Toolbox.ps1 `
   -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> `
-   -GatewayHost <GATEWAY_HOST> -GatewayAppId <GATEWAY_APP_ID> -GatewayClientSecret $env:GATEWAY_CLIENT_SECRET `
+  -GatewayHost <GATEWAY_HOST> -GatewayAppId <GATEWAY_APP_ID> -GatewayClientSecret $env:GATEWAY_CLIENT_SECRET `
   -SubscriptionId <SUBSCRIPTION_ID> -ResourceGroup <RESOURCE_GROUP> `
   -AccountName <FOUNDRY_ACCOUNT> -ProjectName <PROJECT>
 ```
 
 > Prefer the portal? Create the connection (Tools → custom MCP → OAuth2, Custom OAuth) and the toolbox
-> in the Foundry Toolkit instead. Either way, Foundry's per-connection reply URL **must** be registered
-> on the gateway app or the first consent fails with a `redirect_uri` mismatch (the script does this).
+> in the Foundry Toolkit instead. Either way Foundry's per-connection reply URL **must** be registered
+> on the app, or the first consent fails with a `redirect_uri` mismatch (the script does this).
 
 To run alongside existing resources, pass `-ConnectionName` and `-ToolboxName`. If you rename the
 toolbox, set `TOOLBOX_NAME` in
-[azure.yaml](agent-framework-agent-with-foundry-toolbox-responses/azure.yaml) to match — the agent
-resolves its Toolbox from that value, so a mismatch surfaces as an agent with no tools.
+[`azure.yaml`](agent-framework-agent-with-foundry-toolbox-responses/azure.yaml) to match — a mismatch
+surfaces as an agent with no tools.
+
 ### Initialize and deploy the agent
 
-Before deployment, verify the selected environment's project endpoint: agent, model, connection,
-and Toolbox must belong to the **same intended project**. Run initialization only for a new local
-deployment environment; do not overwrite a configured project unintentionally.
-
-The [requirements](agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/requirements.txt)
-pin `agent-framework-foundry==1.13.0`, `agent-framework-core==1.18.0`,
-and `agent-framework-foundry-hosting==1.0.0b260910`. The manifest uses Responses protocol `2.0.0`;
-do not reuse older hosting pins from unrelated samples.
+Confirm the agent, model, connection, and Toolbox all belong to the **same project** before deploying.
 
 ```powershell
 $PROJECT_ID = "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.CognitiveServices/accounts/<FOUNDRY_ACCOUNT>/projects/<PROJECT>"
-```
 
-```powershell
 azd ai agent init -m agent-framework-agent-with-foundry-toolbox-responses/azure.yaml `
   --project-id $PROJECT_ID --model-deployment gpt-4.1 --no-prompt --force -e sharepoint-retrieval
-```
-
-Run subsequent commands from the initialized project directory:
-
-```powershell
 azd env set enableHostedAgentVNext true -e sharepoint-retrieval
-```
-
-Check generated environment substitutions use the syntax expected by `azd` (`${VAR}`).
-
-```powershell
+# In the scaffolded agent.yaml, replace any ${{VAR}} with single-brace ${VAR}
 azd up -e sharepoint-retrieval
 ```
 
@@ -193,23 +104,23 @@ azd up -e sharepoint-retrieval
 azd ai agent invoke --new-session "What does our onboarding guide say about MFA setup?" --timeout 120
 ```
 
-The first call returns an **OAuth consent** URL — approve as a Copilot-licensed user with access to the
-site, then re-invoke. To confirm per-user trimming, ask as a user *without* access to a document and
-verify it isn't returned.
+The first call returns an **OAuth consent** URL — approve as a Copilot-licensed user with access to
+the site, then re-invoke. To confirm per-user trimming, ask as a user *without* access to a document
+and verify it isn't returned.
 
 ## Option 2: VS Code (Foundry Toolkit)
 
 1. Install the **Foundry Toolkit** VS Code extension and `az login`.
-2. Open the [agent project](agent-framework-agent-with-foundry-toolbox-responses/), configure a local
-   Python environment with its pinned requirements and project/model/Toolbox settings, then run
-   `azd ai agent run` and chat via **Foundry Toolkit: Open Agent Inspector**.
+2. Open `agent-framework-agent-with-foundry-toolbox-responses/`, configure a local Python environment
+   with its pinned requirements, then run `azd ai agent run` and chat via **Foundry Toolkit: Open
+   Agent Inspector**.
 3. Run **Foundry Toolkit: Deploy Hosted Agent** to build, register the version, and assign RBAC.
 
-(The connection + toolbox from Option 1 are still required — create them first.)
+(The connection + toolbox from Option 1 are still required first.)
 
 ## Publish to Teams
 
-The Foundry auto-bot is preserved. Run this from the **repository root**:
+The Foundry auto-bot is preserved; publish over the native Microsoft 365 route:
 
 ```powershell
 ./scripts/Publish-AgentToTeams.ps1 -ResourceGroup <RESOURCE_GROUP> `
@@ -218,36 +129,32 @@ The Foundry auto-bot is preserved. Run this from the **repository root**:
 ```
 
 For a **public** project, omit `-UseM365PublicEndpoint` — the publish API enables the activity
-protocol on its own. If the project still fronts Foundry with API Management, pass
+protocol on its own. If this project still fronts Foundry with API Management, pass
 `-ApimName <APIM_NAME>` instead; see the
-[API Management appendix](../../../README.md#appendix--api-management-bridge). For private
-deployment, validate the inbound Teams route, Toolbox reachability, and gateway egress independently
-before rollout. If the identity already has a bot, reuse its name with `-BotName`. Tenant publication
-requires admin approval.
+[API Management appendix](../../../README.md#appendix--api-management-bridge). If the identity
+already has a bot, reuse its name with `-BotName`. Tenant publication requires admin approval.
 
-Open the agent in Teams, complete consent as required, and ask.
-
-Repeat the [two-user checks](../../../guides/verify-per-user-isolation.md)
-with fresh, separate conversations in the target environment before rollout.
+Open the agent in Teams, complete consent, and ask. Then repeat the
+[two-user checks](../../../guides/verify-per-user-isolation.md) in fresh, separate conversations
+before rollout.
 
 ## Troubleshooting
 
 | Symptom | Cause / fix |
 | --- | --- |
 | Agent returns no tools | Toolbox name/`TOOLBOX_NAME` mismatch, or no default version. Check `azd ai toolbox show sharepoint-retrieval-tools`. |
+| `HTTP 404` enumerating tools | The MCP server is unreachable from Foundry — if it's on an internal Container Apps environment, its ingress must be `external`. See [private hosting](obo-mcp-server/README.md#host-it-without-a-public-endpoint). |
 | Consent URL every call | Consent not completed, or the connection token expired. Complete the consent URL. |
-| `401` at the gateway | Forwarded token isn't OBO-able — check the connection scope (`api://<GATEWAY_APP_ID>/access_as_user`) and that the gateway app issues v2 tokens. |
-| `403 … Files.Read.All/Sites.Read.All` | Gateway app missing/ungranted Graph delegated permissions — re-run `Register-McpServerApp.ps1`. |
+| `401` at the MCP server | Forwarded token isn't OBO-able — check the connection scope (`api://<GATEWAY_APP_ID>/access_as_user`) and that the app issues v2 tokens. |
+| `403 … Files.Read.All/Sites.Read.All` | App missing/ungranted Graph delegated permissions — re-run `Register-McpServerApp.ps1`. |
 | `403 … valid license` | User isn't Copilot-licensed and Retrieval API paygo isn't enabled — a licensing gate, not code. |
 | Startup / readiness fails | Ensure `enableHostedAgentVNext=true` and `AZURE_AI_MODEL_DEPLOYMENT_NAME` matches a real deployment. |
-| Tool calls ask for `x-client-user-token` | Wrong/old local-OBO implementation deployed. This sample uses `FoundryToolbox`; explicit header forwarding belonged to the retired shared-bot sample. |
-| Wrong project or Toolbox selected | Check `FOUNDRY_PROJECT_ENDPOINT` and `TOOLBOX_NAME` together; the agent deliberately ignores `TOOLBOX_ENDPOINT` and `ENABLE_TOOLBOX`. |
+| Still calling the old host after a change | Foundry calls the URL on the **connection**; updating only the toolbox leaves the old address in use. |
 
 ## Next steps
 
-- [OBO MCP server setup](obo-mcp-server/README.md)
+- [OBO MCP server setup](obo-mcp-server/README.md) · [without a public endpoint](obo-mcp-server/README.md#host-it-without-a-public-endpoint)
 - [Verify per-user isolation](../../../guides/verify-per-user-isolation.md)
-- [Toolbox wiring checks](agent-framework-agent-with-foundry-toolbox-responses/tests/test_toolbox_wiring.py)
 - [Microsoft 365 Copilot Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview)
-- [Use a toolbox with a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent)
+- [Use a toolbox with a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [How toolbox authentication works](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication)
 - Sibling samples: [Work IQ](../sharepoint-agent-workiq/README.md) · [Databricks](../databricks-agent/README.md)

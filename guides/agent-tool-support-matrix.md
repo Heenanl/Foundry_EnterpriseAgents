@@ -39,7 +39,6 @@ not a sample setting.
 - For broad Microsoft 365 grounding, consider Work IQ. For a prompt-only solution, consider the SharePoint grounding sample and confirm current Teams/channel support.
 - Use **Foundry Agent Consumer** for invocation at the narrowest supported agent/project scope and **Foundry User** for the agent identity's model calls at project scope. Do not assume tenant publishing or `BotServiceRbac` removes caller authorization requirements.
 - Retrieval API pay-as-you-go requires at least one Microsoft 365 Copilot license in the tenant. Work IQ billing and SharePoint-agent billing do not automatically entitle the raw Retrieval API.
-- SharePoint retrieval was validated on a **private** Foundry project, and the Teams route holds with `publicNetworkAccess=Disabled` — retested 2026-09-23, with Teams replying while the same project returned `403` to public callers. The Toolbox-to-gateway call is egress, so keep the gateway reachable from the project. Neither route is a production certification.
 
 ## Customer validation
 
