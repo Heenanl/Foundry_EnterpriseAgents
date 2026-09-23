@@ -1,8 +1,10 @@
 # SharePoint / enterprise-data grounding options for Foundry agents
 
 Choose a grounding route based on **user identity**, **site scoping**, and the agent hosting model.
-A container's managed identity does not grant delegated SharePoint access. Preview tool availability,
-licensing, and Teams behavior must be checked for the chosen service and deployment configuration.
+A container's managed identity does not grant delegated SharePoint access. Any of these agents can be
+published to Teams; what differs is whether the grounding tool still retrieves **as the signed-in
+user** once it is. Preview tool availability and licensing must be checked for the chosen service and
+deployment configuration.
 
 ## Decision matrix
 
@@ -11,10 +13,19 @@ SharePoint, Work IQ, and MCP integrations include preview features.
 
 | # | Tool / route | Backed by | Prompt | Hosted | Teams | Per-user (trimmed) | Scoping | Licensing | Docs | Repo sample |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | Not with app-only identity | Prompt route; check channel support | Delegated user context required | Site/folder | Copilot license or Retrieval API paygo | [SharePoint tool](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint) | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
-| 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Via publish | Delegated connection required | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq) | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
-| 3 | SharePoint retrieval: Toolbox + OBO MCP server | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Toolbox](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [MCP](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol) · [Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview) | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
-| 4 | Basic prompt agent | Model deployment | Yes | Not this sample | Via publish | No retrieval | None | Model usage | [Prompt agent](https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent) | [Prompt source](../foundryagents/promptagent/promptagent.py) |
+| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | Not with app-only identity | Yes — confirm grounding still runs as the user | Delegated user context required | Site/folder | Copilot license or Retrieval API paygo | [SharePoint tool](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint) | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
+| 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Yes | Delegated connection required | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq) | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
+| 3 | SharePoint retrieval: Toolbox + OBO MCP server | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Yes | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Toolbox](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [MCP](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol) · [Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview) | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
+| 4 | Basic prompt agent | Model deployment | Yes | Not this sample | Yes | No retrieval | None | Model usage | [Prompt agent](https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent) | [Prompt source](../foundryagents/promptagent/promptagent.py) |
+
+**Publishing is agent-agnostic.** Every route above reaches Teams the same way — on the Foundry
+auto-bot via [`scripts/Publish-AgentToTeams.ps1`](../scripts/Publish-AgentToTeams.ps1), prompt agents
+included. The **Teams** column therefore flags tool-level caveats once published, not whether the
+agent can be published. Row 1's caveat is that `sharepoint_grounding_preview` requires the caller's
+delegated identity and
+[must not run under an app identity](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint#create-an-agent-with-the-sharepoint-tool),
+so confirm retrieval is still permission-trimmed once the agent answers through Teams rather than
+your local `az login`.
 
 Two things the table cannot show. A successful answer from a remote connector does **not** demonstrate
 per-user trimming — verify the downstream caller identity yourself rather than inferring it from
