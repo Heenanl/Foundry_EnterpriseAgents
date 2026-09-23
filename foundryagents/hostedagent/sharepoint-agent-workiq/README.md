@@ -22,8 +22,8 @@ flowchart LR
     U -.->|first-time OAuth consent| WIQ
 ```
 
-Publishing to Teams goes through the repo's APIM bridge like any hosted agent; the bridge only carries
-the activity transport and is auth-transparent (consent + OBO happen server-side).
+Publishing to Teams uses the repo's native Microsoft 365 route — no bridge required. The transport
+carries only the activity traffic and is auth-transparent: consent and OBO happen server-side.
 
 ## Prerequisites
 
@@ -47,8 +47,7 @@ Microsoft-owned constants (use as-is):
 | `WorkIQAgent.Ask` scope ID | `0b1715fd-f4bf-4c63-b16d-5be31f9847c2` |
 | Work IQ "Agent Tools" audience | `ea9ffc3e-8a23-4a7d-836d-234d7c7565c1` |
 
-Placeholders: `<TENANT_ID>`, `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<APIM_NAME>`.
+Placeholders: `<TENANT_ID>`, `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`.
 
 ## Option 1: Azure Developer CLI (`azd`)
 
@@ -122,14 +121,17 @@ verify it isn't returned.
 
 ## Publish to Teams
 
-The Foundry auto-bot is preserved; publish through the repo's APIM bridge (the same user consent + OBO
-happen server-side, unchanged from the playground):
+The Foundry auto-bot is preserved; publish over the native Microsoft 365 route (the same user consent
++ OBO happen server-side, unchanged from the playground):
 
 ```powershell
 ./scripts/Publish-AgentToTeams.ps1 -ResourceGroup <RESOURCE_GROUP> `
   -AgentName agent-framework-agent-sharepoint `
-  -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> -ApimName <APIM_NAME>
+  -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> -UseM365PublicEndpoint
 ```
+
+If this project still fronts Foundry with API Management, pass `-ApimName <APIM_NAME>` instead — see
+the [API Management appendix](../../../README.md#appendix--api-management-bridge).
 
 Open the agent in Teams, complete the first-time sign-in/consent, and ask. If your agent subnet uses
 default-deny egress, allow `agent365.svc.cloud.microsoft`, `workiq.svc.cloud.microsoft`,

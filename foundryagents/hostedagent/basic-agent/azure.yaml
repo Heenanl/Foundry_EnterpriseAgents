@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+# Minimal hosted agent: a model deployment plus one container. No tools, no
+# connections, nothing to create out-of-band before `azd up`.
+requiredVersions:
+  extensions:
+    azure.ai.agents: '>=1.0.0-beta.4'
+name: contoso-support-agent
+services:
+  ai-project:
+    host: azure.ai.project
+    deployments:
+      # Reuse an existing model deployment in your Foundry project.
+      - name: gpt-4.1
+        model:
+          format: OpenAI
+          name: gpt-4.1
+        version: '2025-04-14'
+        sku:
+          name: GlobalStandard
+          capacity: 10
+
+  contoso-support-agent:
+    host: azure.ai.agent
+    metadata:
+      tags:
+        - Agent Framework
+        - AI Agent Hosting
+        - Azure AI AgentServer
+        - Responses Protocol
+    project: src/contoso-support-agent
+    language: python
+    codeConfiguration:
+      runtime: python_3_13
+      entryPoint: main.py
+    uses:
+      - ai-project
+    kind: hosted
+    name: contoso-support-agent
+    description: A minimal Agent Framework hosted agent, ready to publish to Microsoft Teams and Microsoft 365 Copilot.
+    protocols:
+      - protocol: responses
+        version: 2.0.0
+    environmentVariables:
+      - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+        value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+    container:
+      resources:
+        cpu: '0.5'
+        memory: 1Gi
+infra:
+  provider: microsoft.foundry

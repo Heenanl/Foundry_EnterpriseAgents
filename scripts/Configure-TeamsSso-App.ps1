@@ -38,7 +38,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$AppId,
 
-  # Downstream API whose delegated scope the OBO step will request (e.g. the MCP-OBO gateway app).
+  # Downstream API whose delegated scope the OBO step will request (e.g. the OBO MCP server app).
   # Leave empty to only configure Teams SSO without granting a downstream permission.
   [string]$DownstreamResourceAppId = "",
 

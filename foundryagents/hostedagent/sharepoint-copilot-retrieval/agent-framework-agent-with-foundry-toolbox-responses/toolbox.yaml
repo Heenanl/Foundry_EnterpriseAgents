@@ -1,0 +1,23 @@
+# Mirrors the `sharepoint-retrieval-tools` toolbox (default version 1) in your Foundry project.
+# `<gateway-host>` below is a placeholder: setup/Create-Connection-And-Toolbox.ps1 substitutes your
+# real gateway host before creating the toolbox. Creating it straight from this file fails with
+# "Invalid URI: The hostname could not be parsed".
+#
+# Route for HOSTED agents: the OBO MCP server (this repo's obo-mcp-server)
+# behind a Foundry OAuth2 identity-passthrough connection. On first use the signed-in user
+# approves; Foundry then holds that user's token server-side and forwards it to the gateway,
+# which does the On-Behalf-Of exchange and calls the Microsoft 365 Copilot Retrieval API as
+# the user (site-scoped, permission-trimmed). A hosted container CAN complete this because
+# Foundry brokers the token server-side. Backed by the `SharePointRetrievalOBO` project
+# connection (remote MCP, OAuth2 identity passthrough) that you create in the portal pointing
+# at your deployed gateway.
+#
+description: Per-user, site-scoped SharePoint retrieval via the OBO MCP server (Copilot Retrieval API)
+tools:
+  - type: mcp
+    server_label: sharepoint_retrieval
+    # Your deployed OBO MCP server endpoint:
+    #   https://<gateway-host>/mcp
+    server_url: https://<gateway-host>/mcp
+    project_connection_id: SharePointRetrievalOBO
+    require_approval: never

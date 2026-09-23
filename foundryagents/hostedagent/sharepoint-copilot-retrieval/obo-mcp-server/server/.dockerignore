@@ -1,0 +1,9 @@
+# Local secrets must never be baked into the image; the host supplies them at runtime.
+.env
+*.env
+!.env.example
+
+__pycache__/
+*.pyc
+.venv/
+.venv*/

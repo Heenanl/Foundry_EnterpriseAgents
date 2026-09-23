@@ -24,3 +24,6 @@ last-trace.json
 
 # Internal docs (not shared)
 docs/
+.github/*
+.github/workflows/
+.github/instructions/

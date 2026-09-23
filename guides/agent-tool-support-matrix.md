@@ -27,18 +27,15 @@ C --> W[Work IQ: Microsoft 365]
 C --> D[Databricks Genie: space]
 ```
 
-For site-scoped hosted retrieval, [Path A](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md)
-uses Toolbox OAuth passthrough and a gateway; [Path B](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/README.md)
-uses a shared Teams SSO bot and in-agent OBO. A model-only prompt agent has no retrieval or document
+For site-scoped hosted retrieval, [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md)
+uses Toolbox OAuth passthrough and a gateway. A model-only prompt agent has no retrieval or document
 permission-trimming layer.
 
 ```mermaid
 flowchart LR
-U[Teams user] --> A[Path A: auto-bot and Toolbox]
-A --> G[MCP-OBO gateway]
-U --> B[Path B: shared SSO bot and hosted agent]
+U[Teams user] --> A[Auto-bot and Toolbox]
+A --> G[OBO MCP server]
 G --> R[Copilot Retrieval API]
-B --> R
 U --> M[Model-only prompt agent]
 ```
 
@@ -52,9 +49,8 @@ SharePoint, Work IQ, and MCP integrations include preview features.
 | 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | Not with app-only identity | Prompt route; check channel support | Delegated user context required | Site/folder | Copilot license or Retrieval API paygo | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
 | 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Via publish | Delegated connection required | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
 | 3 | Databricks Genie remote MCP | Databricks Genie | Yes | Yes | Via publish | Do not assume per-user; shared connection credentials do not trim by Teams caller | Genie space | Databricks | [Genie sample](../foundryagents/hostedagent/databricks-agent/README.md) |
-| 4 | Path A: Toolbox + MCP-OBO gateway | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Path A](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathA/README.md) |
+| 4 | SharePoint retrieval: Toolbox + OBO MCP server | Copilot Retrieval API | MCP integration possible; sample is hosted | Yes | Foundry auto-bot | OAuth-passthrough token → gateway OBO | Site/path in sample | Copilot license or Retrieval API paygo | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
 | 5 | Basic prompt agent | Model deployment | Yes | Not this sample | Via publish | No retrieval | None | Model usage | [Prompt source](../foundryagents/promptagent/promptagent.py) |
-| 6 | Path B: shared SSO bot + in-code OBO | Copilot Retrieval API | Not this sample | Yes | Custom shared bot | Forwarded user token → in-agent OBO | Site/path in sample | Copilot license or Retrieval API paygo | [Path B](../foundryagents/hostedagent/sharepoint-copilot-retrieval/pathB/README.md) |
 
 The Retrieval API supports additional filter expressions, but these samples configure a site
 `path` filter. File-type or date filtering requires an implementation change; it is not a sample setting.
@@ -68,19 +64,18 @@ The Retrieval API supports additional filter expressions, but these samples conf
 | Databricks Genie | Structured-data queries within a Genie space | Independently verify downstream caller identity; a shared credential is not per-user OBO |
 | Path A | Keeps the Foundry auto-bot; centralizes OBO in a gateway | Interactive tool OAuth consent, gateway operations, and separate private-network validation |
 | Model-only prompt agent | No retrieval infrastructure | Cannot provide permission-trimmed enterprise grounding |
-| Path B | Shared multiagent routing and explicit token control | Operate the bot and OBO credentials; durable bot storage needed for scale-out |
 
 ## Recommendation
 
-- For **hosted, site-scoped SharePoint retrieval**, choose Path A for the auto-bot plus tool consent, or Path B for a shared bot and Teams SSO with interactive fallback. See the [detailed decision guide](per-user-sharepoint-obo-teams-decision-matrix.md).
+- For **hosted, site-scoped SharePoint retrieval**, use Path A: the Foundry auto-bot plus interactive tool consent. A retired shared-bot variant with silent Teams SSO is kept for reference in [deprecated/pathB](../deprecated/pathB/README.md).
 - For broad Microsoft 365 grounding, consider Work IQ. For a prompt-only solution, consider the SharePoint grounding sample and confirm current Teams/channel support.
 - Use **Foundry Agent Consumer** for invocation at the narrowest supported agent/project scope and **Foundry User** for the agent identity's model calls at project scope. Do not assume tenant publishing or `BotServiceRbac` removes caller authorization requirements.
 - Retrieval API pay-as-you-go requires at least one Microsoft 365 Copilot license in the tenant. Work IQ billing and SharePoint-agent billing do not automatically entitle the raw Retrieval API.
-- Path A starts with a public Foundry project; private-network/APIM operation needs separate validation. For Path B, `publicNetworkAccess=Enabled` on a private-networked account is not evidence of private-only routing. Neither route is a production certification.
+- SharePoint retrieval was validated on a **private** Foundry project, and the Teams route holds with `publicNetworkAccess=Disabled` — retested 2026-09-23, with Teams replying while the same project returned `403` to public callers. The Toolbox-to-gateway call is egress, so keep the gateway reachable from the project. Neither route is a production certification.
 
 ## Customer validation
 
-Complete the [two-user checklist](per-user-sharepoint-obo-teams-decision-matrix.md#verify-per-user-isolation-either-path)
+Complete the [two-user checklist](verify-per-user-isolation.md)
 with a known document, a user who can read it, and a user who cannot. Compare authenticated tool
 identities and raw retrieval outcomes in separate sessions; do not use a model answer or blocked
 citation link as proof of permission trimming. Repeat for each connection and target network posture.
