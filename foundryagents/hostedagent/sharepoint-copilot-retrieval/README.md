@@ -47,8 +47,9 @@ for reference in [deprecated/pathB](../../../deprecated/pathB/README.md).
 Two legs carry traffic and they lock down independently:
 
 - **Inbound** — Teams reaches the agent over the Microsoft 365 route. This survives
-  `publicNetworkAccess=Disabled`: with the route enabled, Teams replied normally while direct public
-  calls to the same project returned `403`. See the [deployment guide](../../../README.md).
+  `publicNetworkAccess=Disabled`, retested 2026-09-23: with the route enabled, Teams replied normally
+  while direct public calls to the same project returned `403`. See the
+  [deployment guide](../../../README.md).
 - **Outbound** — Foundry's Toolbox calls your gateway. This is egress from the project, so inbound
   restrictions do not affect it; what matters is that the gateway is reachable from Foundry. The
   sample's gateway is a Container App with external ingress. Enabling the Microsoft 365 route does

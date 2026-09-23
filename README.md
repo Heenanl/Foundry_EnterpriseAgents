@@ -51,9 +51,11 @@ This changes **network reachability only** — keep `BotServiceRbac` or `BotServ
 `authorization_schemes` so callers are still authorized. Teams and Microsoft 365 are themselves
 public-network products; no Foundry setting makes the channel private.
 
-**Verified 2026-09-23 (`swedencentral`) under the tested network-ACL posture.** The controlled
-A/B reached the agent when the flag was `true` and did not when it was `false`; the exact
-`publicNetworkAccess=Disabled` configuration described by Microsoft Learn has not yet been retested.
+**Verified 2026-09-23 (`swedencentral`).** Two runs. A controlled A/B under a Deny network ACL
+reached the agent with the flag `true` and not with `false`, isolating the flag as the cause. The
+Microsoft Learn configuration was then retested directly: with `publicNetworkAccess=Disabled` on the
+account, Teams sent a message and got a reply, while the same project's Responses endpoint returned
+`403` to eight consecutive calls from the public internet.
 
 **Still need API Management?** Keep it for custom public-to-private ingress, non-Teams surfaces, or
 API-management concerns such as quotas and request shaping. See
