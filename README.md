@@ -1,8 +1,10 @@
 # Foundry Agents on a Private Network — Teams and Microsoft 365
 
 Publish **private, VNet-isolated Microsoft Foundry agents** to **Microsoft Teams** and **Microsoft 365
-Copilot**, and ground them in per-user enterprise data. Foundry admits Microsoft 365 channel traffic
-natively, so **no gateway, proxy, or API Management bridge is required**.
+Copilot**, and ground them in per-user enterprise data through **On-Behalf-Of (OBO) authentication** —
+every tool call runs as the signed-in user, so results stay permission-trimmed to what that person can
+already see. Foundry admits Microsoft 365 channel traffic natively, so **no gateway, proxy, or API
+Management bridge is required**.
 
 ## Quickstart
 
@@ -50,12 +52,6 @@ you deploy no public ingress of your own.
 This changes **network reachability only** — keep `BotServiceRbac` or `BotServiceTenant` in
 `authorization_schemes` so callers are still authorized. Teams and Microsoft 365 are themselves
 public-network products; no Foundry setting makes the channel private.
-
-**Verified 2026-09-23 (`swedencentral`).** Two runs. A controlled A/B under a Deny network ACL
-reached the agent with the flag `true` and not with `false`, isolating the flag as the cause. The
-Microsoft Learn configuration was then retested directly: with `publicNetworkAccess=Disabled` on the
-account, Teams sent a message and got a reply, while the same project's Responses endpoint returned
-`403` to eight consecutive calls from the public internet.
 
 **Still need API Management?** Keep it for custom public-to-private ingress, non-Teams surfaces, or
 API-management concerns such as quotas and request shaping. See
