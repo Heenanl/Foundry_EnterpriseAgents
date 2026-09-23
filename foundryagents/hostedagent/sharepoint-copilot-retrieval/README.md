@@ -131,7 +131,7 @@ The Foundry auto-bot is preserved; publish over the native Microsoft 365 route:
 For a **public** project, omit `-UseM365PublicEndpoint` — the publish API enables the activity
 protocol on its own. If this project still fronts Foundry with API Management, pass
 `-ApimName <APIM_NAME>` instead; see the
-[API Management appendix](../../../README.md#appendix--api-management-bridge). If the identity
+[archived bridge](../../../deprecated/apim-bridge/README.md). If the identity
 already has a bot, reuse its name with `-BotName`. Tenant publication requires admin approval.
 
 Open the agent in Teams, complete consent, and ask. Then repeat the

@@ -53,10 +53,6 @@ This changes **network reachability only**, not authorization: callers are still
 Bot Service scheme (`BotServiceRbac` or `BotServiceTenant`) in `authorization_schemes`, which the
 scripts set and preserve for you.
 
-**Still need API Management?** Keep it for custom public-to-private ingress, non-Teams surfaces, or
-API-management concerns such as quotas and request shaping. See
-[Appendix — API Management bridge](#appendix--api-management-bridge).
-
 ---
 
 ## Prerequisites
@@ -77,8 +73,7 @@ API-management concerns such as quotas and request shaping. See
 6. For the retrieval samples, the selected path's delegated permissions, user licensing, and runtime
    roles: **Foundry Agent Consumer** to invoke the agent and **Foundry User** for model access.
 
-Placeholders used below: `<RESOURCE_GROUP>`, `<AGENT_NAME>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<APIM_NAME>`.
+Placeholders used below: `<RESOURCE_GROUP>`, `<AGENT_NAME>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`.
 
 ---
 
@@ -113,9 +108,9 @@ These preview retrieval samples do not certify production readiness or every net
 | [scripts/Enable-M365PublicEndpoint.ps1](scripts/Enable-M365PublicEndpoint.ps1) | Admit or revoke Microsoft 365 / Teams traffic on an existing agent |
 | [infra/bot-service.bicep](infra/bot-service.bicep) | Azure Bot registration and Teams channel |
 | [tests/Test-M365AgentEndpoint.ps1](tests/Test-M365AgentEndpoint.ps1) | Offline regression tests for the endpoint patch |
-| [deploy.ps1](deploy.ps1), [infra/main.bicep](infra/main.bicep), [APIM policy](apim-policies/foundry-activity-policy.xml), [scripts/Onboard-Agents.ps1](scripts/Onboard-Agents.ps1), [tests/test_bridge.py](tests/test_bridge.py) | Optional API Management bridge — see the [appendix](#appendix--api-management-bridge) |
 
-Each agent sample documents its own setup scripts.
+Each agent sample documents its own setup scripts. A retired API Management bridge is kept for
+reference in [deprecated/apim-bridge](deprecated/apim-bridge/README.md).
 
 ---
 
@@ -222,88 +217,6 @@ so a caller cannot gain access by setting a forwarding header. Source IP filteri
 depth only** — Bot Service and Microsoft 365 ranges are shared across tenants, so every request must
 still pass token validation and the configured tenant or RBAC checks.
 
-With the [APIM bridge](#appendix--api-management-bridge) the same JWT is forwarded unchanged through
-your gateway, and Foundry validates it at the same boundary.
-
----
-
-## Appendix — API Management bridge
-
-The bridge predates `enable_m365_public_endpoint` and is **no longer required for Teams or Microsoft
-365**. Keep it for custom public-to-private ingress, non-Teams surfaces, or API-management concerns
-such as quotas and request shaping.
-
-```mermaid
-flowchart LR
-  T[Teams or Microsoft 365] --> B[Azure Bot Service]
-  B -->|Activity request and Bot JWT| A[APIM public gateway]
-  A -->|VNet and private DNS| F[Private Foundry endpoint]
-  F -->|Asynchronous reply via serviceUrl| B
-  B --> T
-```
-
-One templated APIM operation (`/api/projects/{project}/agents/{agent}/...`) serves **every** project
-and agent in the account, so you configure only `foundryHost`. The bridge is auth-transparent — the
-Bot Framework JWT is forwarded unchanged and Foundry validates it — and it preserves each bot's
-`api-version`. It also needs a free **/27+ subnet** in the Foundry VNet, and APIM Standard v2 takes
-about 10 minutes to provision.
-
-Configure [infra/main.parameters.bicepparam](infra/main.parameters.bicepparam):
-
-```bicep
-param location = 'swedencentral'
-param vnetName = 'contoso-foundry-vnet'
-param apimSubnetPrefix = '10.20.3.0/27'
-param apimName = '<APIM_NAME>'
-param apimPublisherEmail = 'platform@example.com'
-param foundryHost = 'https://<FOUNDRY_ACCOUNT>.services.ai.azure.com'
-param foundryApiVersion = '2025-11-15-preview'
-```
-
-Set `resourceGroupName` and `location` in
-[infra/resourcegroup.config.json](infra/resourcegroup.config.json), then preview and deploy:
-
-```powershell
-./deploy.ps1 -WhatIf
-```
-
-```powershell
-./deploy.ps1
-```
-
-Publish through the bridge with `-ApimName` in place of `-UseM365PublicEndpoint`:
-
-```powershell
-./scripts/Publish-AgentToTeams.ps1 `
-    -ResourceGroup <RESOURCE_GROUP> `
-    -AgentName <AGENT_NAME> `
-    -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> `
-    -ApimName <APIM_NAME>
-```
-
-Repoint bots created outside this repo with `./deploy.ps1 -OnboardOnly`, and check routing with
-[tests/test_bridge.py](tests/test_bridge.py).
-
----
-
-### Bridge troubleshooting
-
-| Symptom | Cause / fix |
-| --- | --- |
-| `403` in Bot Service Web Chat | Bot endpoint still points at the private host — run `./deploy.ps1 -OnboardOnly` |
-| `500` | APIM cannot resolve/reach Foundry (DNS/VNet) or wrong `foundryHost` |
-| `400` | Wrong path suffix or missing `api-version` |
-| `202`, no reply | `202` acknowledges receipt only. Check agent execution and the asynchronous reply route to Bot Service `serviceUrl`. |
-
-**Recommended hardening** (see the commented block in the policy):
-
-- Enable `validate-jwt` in APIM to reject non-Bot-Framework tokens at the edge.
-- Restrict inbound traffic to approved Bot Service sources using a supported network control;
-  maintain the allowed ranges if implementing IP filtering in APIM policy.
-
-> Foundry-published bots are **not** listed by `az bot list`. Use
-> `az resource list --resource-type Microsoft.BotService/botServices`.
-
 ---
 
 ## Acknowledgements
@@ -331,4 +244,3 @@ delegated-access approach:
 - Audit agent usage — [observability/foundry-agent-audit/README.md](observability/foundry-agent-audit/README.md)
 - Microsoft Learn — [Allow Microsoft 365 traffic to a private-network agent](https://learn.microsoft.com/azure/foundry/agents/how-to/configure-agent#allow-microsoft-365-traffic-to-a-private-network-agent) and [Publish agents by using the REST API](https://learn.microsoft.com/azure/foundry/agents/how-to/publish-copilot-virtual-network)
 - [Microsoft Foundry documentation](https://learn.microsoft.com/azure/ai-foundry/)
-- API Management bridge only — [v2 service tiers](https://learn.microsoft.com/azure/api-management/v2-service-tiers-overview) and [VNet outbound integration](https://learn.microsoft.com/azure/api-management/integrate-vnet-outbound)

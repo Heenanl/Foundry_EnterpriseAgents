@@ -131,7 +131,7 @@ The Foundry auto-bot is preserved; publish over the native Microsoft 365 route (
 ```
 
 If this project still fronts Foundry with API Management, pass `-ApimName <APIM_NAME>` instead — see
-the [API Management appendix](../../../README.md#appendix--api-management-bridge).
+the [archived bridge](../../../deprecated/apim-bridge/README.md).
 
 Open the agent in Teams, complete the first-time sign-in/consent, and ask. If your agent subnet uses
 default-deny egress, allow `agent365.svc.cloud.microsoft`, `workiq.svc.cloud.microsoft`,
