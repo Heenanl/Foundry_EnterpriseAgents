@@ -66,7 +66,9 @@ function New-AgentEndpointPatch {
     .PARAMETER AuthorizationScheme
         Bot Service scheme to apply. Publishing replaces a different Bot Service
         scheme, so this mirrors the publish scope: Shared/Personal -> BotServiceRbac,
-        Tenant -> BotServiceTenant.
+        Tenant -> BotServiceTenant. Omit it to keep whatever Bot Service scheme the
+        endpoint already has, so a rollback cannot silently re-scope a tenant-published
+        agent; BotServiceRbac is used only when the endpoint has none.
 
     .PARAMETER EnableM365PublicEndpoint
         Value for `activity.enable_m365_public_endpoint`. Pass $false to roll back.
@@ -77,7 +79,7 @@ function New-AgentEndpointPatch {
         [Parameter()]$AuthorizationSchemes,
 
         [ValidateSet('BotServiceRbac', 'BotServiceTenant')]
-        [string]$AuthorizationScheme = 'BotServiceRbac',
+        [string]$AuthorizationScheme,
 
         [bool]$EnableM365PublicEndpoint = $true
     )
@@ -92,15 +94,23 @@ function New-AgentEndpointPatch {
     }
     $protocols['activity']['enable_m365_public_endpoint'] = $EnableM365PublicEndpoint
 
+    $existingScheme = $null
     $schemes = @()
     foreach ($scheme in @(ConvertTo-HashtableDeep $AuthorizationSchemes)) {
         if ($null -eq $scheme) { continue }
         $type = if ($scheme -is [System.Collections.IDictionary] -and $scheme.ContainsKey('type')) { $scheme['type'] } else { $null }
         # A single Bot Service scheme is authoritative; the requested one replaces it.
-        if ($type -and $script:BotServiceSchemes -contains $type) { continue }
+        if ($type -and $script:BotServiceSchemes -contains $type) {
+            if (-not $existingScheme) { $existingScheme = $type }
+            continue
+        }
         $schemes += , $scheme
     }
-    $schemes += , @{ type = $AuthorizationScheme }
+
+    $effectiveScheme = if ($AuthorizationScheme) { $AuthorizationScheme }
+    elseif ($existingScheme) { $existingScheme }
+    else { 'BotServiceRbac' }
+    $schemes += , @{ type = $effectiveScheme }
 
     return @{
         agent_endpoint = @{

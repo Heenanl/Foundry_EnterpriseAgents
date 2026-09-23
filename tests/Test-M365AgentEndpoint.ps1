@@ -114,6 +114,17 @@ Assert-That ($patch.agent_endpoint.protocol_configuration['activity']['some_exis
 $patch = New-AgentEndpointPatch -ProtocolConfiguration $published.protocol_configuration -AuthorizationSchemes $published.authorization_schemes -EnableM365PublicEndpoint $false
 Assert-That ($patch.agent_endpoint.protocol_configuration['activity']['enable_m365_public_endpoint'] -eq $false) 'can roll the flag back to false'
 
+# Rollback must not re-scope a tenant-published agent: omitting -AuthorizationScheme keeps
+# whatever Bot Service scheme the endpoint already has.
+$patch = New-AgentEndpointPatch -ProtocolConfiguration $tenantScoped.protocol_configuration -AuthorizationSchemes $tenantScoped.authorization_schemes -EnableM365PublicEndpoint $false
+$schemeTypes = @($patch.agent_endpoint.authorization_schemes | ForEach-Object { $_['type'] })
+Assert-That ($schemeTypes -contains 'BotServiceTenant') 'rollback keeps BotServiceTenant when no scheme is requested'
+Assert-That ($schemeTypes -notcontains 'BotServiceRbac') 'rollback does not silently downgrade to BotServiceRbac'
+
+$patch = New-AgentEndpointPatch -ProtocolConfiguration $tenantScoped.protocol_configuration -AuthorizationSchemes $tenantScoped.authorization_schemes
+$schemeTypes = @($patch.agent_endpoint.authorization_schemes | ForEach-Object { $_['type'] })
+Assert-That ($schemeTypes -contains 'BotServiceTenant') 'enable keeps an existing BotServiceTenant scheme'
+
 # A brand-new agent with no endpoint configuration at all.
 $patch = New-AgentEndpointPatch -ProtocolConfiguration $null -AuthorizationSchemes $null
 $schemeTypes = @($patch.agent_endpoint.authorization_schemes | ForEach-Object { $_['type'] })

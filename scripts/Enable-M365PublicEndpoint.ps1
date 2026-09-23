@@ -32,7 +32,9 @@
 
 .PARAMETER AuthorizationScheme
     Bot Service scheme to keep on the endpoint. Match the publish scope:
-    Shared/Personal -> BotServiceRbac, Tenant -> BotServiceTenant.
+    Shared/Personal -> BotServiceRbac, Tenant -> BotServiceTenant. Omit it to keep
+    whatever the endpoint already has, so a rollback cannot silently re-scope a
+    tenant-published agent.
 
 .PARAMETER Disable
     Roll back: set enable_m365_public_endpoint to false.
@@ -58,7 +60,7 @@ param(
     [string]$ProjectName,
 
     [ValidateSet('BotServiceRbac', 'BotServiceTenant')]
-    [string]$AuthorizationScheme = 'BotServiceRbac',
+    [string]$AuthorizationScheme,
 
     [switch]$Disable,
     [switch]$WhatIf
@@ -104,11 +106,31 @@ $beforeSchemes = @($agent.agent_endpoint.authorization_schemes | ForEach-Object 
 $beforeFlag = $agent.agent_endpoint.protocol_configuration.activity.enable_m365_public_endpoint
 Write-OK "protocols: $($beforeProtocols -join ', ') | auth: $($beforeSchemes -join ', ') | enable_m365_public_endpoint: $(if ($null -eq $beforeFlag) { '<unset>' } else { $beforeFlag })"
 
+# Omitting -AuthorizationScheme keeps the scheme already on the endpoint, so a rollback cannot
+# re-scope a tenant-published agent to BotServiceRbac.
+$existingBotScheme = @($beforeSchemes | Where-Object { $_ -like 'BotService*' })[0]
+$effectiveScheme = if ($AuthorizationScheme) { $AuthorizationScheme }
+elseif ($existingBotScheme) { $existingBotScheme }
+else { 'BotServiceRbac' }
+if (-not $AuthorizationScheme -and $existingBotScheme) {
+    Write-OK "preserving existing Bot Service scheme: $effectiveScheme"
+}
+
+# The endpoint state this patch was built from; PATCH replaces both bags wholesale, so a change
+# landing between the read and the write would otherwise be silently reverted.
+function Get-EndpointSignature($a) {
+    $p = @($a.agent_endpoint.protocol_configuration.PSObject.Properties.Name | Sort-Object) -join ','
+    $s = @($a.agent_endpoint.authorization_schemes | ForEach-Object { $_.type } | Sort-Object) -join ','
+    $f = $a.agent_endpoint.protocol_configuration.activity.enable_m365_public_endpoint
+    return "$p|$s|$f"
+}
+$signature = Get-EndpointSignature $agent
+
 $desired = -not $Disable
 $patch = New-AgentEndpointPatch `
     -ProtocolConfiguration $agent.agent_endpoint.protocol_configuration `
     -AuthorizationSchemes $agent.agent_endpoint.authorization_schemes `
-    -AuthorizationScheme $AuthorizationScheme `
+    -AuthorizationScheme $effectiveScheme `
     -EnableM365PublicEndpoint $desired
 $body = ConvertTo-MergePatchJson $patch
 
@@ -123,6 +145,11 @@ if ($WhatIf) {
 }
 
 Write-Info "==> Patching agent endpoint (enable_m365_public_endpoint = $desired)"
+# Re-read immediately before writing: the API exposes no ETag to gate the write on, so the best
+# available guard is to abort on drift rather than overwrite it with a stale snapshot.
+if ((Get-EndpointSignature (Get-Agent)) -ne $signature) {
+    throw "The agent endpoint changed while this patch was being prepared. Nothing was written - re-run to rebuild the patch from current state."
+}
 $tmp = New-TemporaryFile
 try {
     # az rest rejects a UTF-8 BOM.
@@ -154,7 +181,7 @@ if ($afterProtocols -notcontains 'activity') { Write-Bad 'activity protocol miss
 if ($afterFlag -ne $desired) { Write-Bad "enable_m365_public_endpoint is '$afterFlag', expected '$desired'"; $failed = $true }
 else { Write-OK "enable_m365_public_endpoint = $afterFlag" }
 
-if ($afterSchemes -notcontains $AuthorizationScheme) { Write-Bad "authorization scheme '$AuthorizationScheme' missing"; $failed = $true }
+if ($afterSchemes -notcontains $effectiveScheme) { Write-Bad "authorization scheme '$effectiveScheme' missing"; $failed = $true }
 else { Write-OK "authorization schemes: $($afterSchemes -join ', ')" }
 
 $droppedSchemes = @($beforeSchemes | Where-Object { $_ -and $afterSchemes -notcontains $_ -and $_ -notlike 'BotService*' })
