@@ -43,15 +43,15 @@ flowchart LR
   B --> T
 ```
 
-Setting `agent_endpoint.protocol_configuration.activity.enable_m365_public_endpoint` tells Foundry to
+Setting `enable_m365_public_endpoint` tells Foundry to
 accept Microsoft 365 channel traffic on **only** the Activity Protocol route. The `responses`,
 `invocations`, `a2a`, and `mcp` protocols and the project APIs stay private, and the account keeps
 `publicNetworkAccess=Disabled`. Foundry owns the public entry point, TLS, and source IP filtering, so
 you deploy no public ingress of your own.
 
-This changes **network reachability only** — keep `BotServiceRbac` or `BotServiceTenant` in
-`authorization_schemes` so callers are still authorized. Teams and Microsoft 365 are themselves
-public-network products; no Foundry setting makes the channel private.
+This changes **network reachability only**, not authorization: callers are still checked against the
+Bot Service scheme (`BotServiceRbac` or `BotServiceTenant`) in `authorization_schemes`, which the
+scripts set and preserve for you.
 
 **Still need API Management?** Keep it for custom public-to-private ingress, non-Teams surfaces, or
 API-management concerns such as quotas and request shaping. See
