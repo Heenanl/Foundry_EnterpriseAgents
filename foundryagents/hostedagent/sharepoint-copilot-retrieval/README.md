@@ -65,12 +65,23 @@ so the gateway does not have to be public. It requires Standard Agent Setup with
    subnet — see the
    [19-private-network-agent-tools](https://github.com/microsoft-foundry/foundry-samples/tree/main/infrastructure/infrastructure-setup-bicep/19-private-network-agent-tools)
    template.
-2. The gateway's Container Apps environment **injected into that subnet** with **internal-only
-   ingress**. A VNet is fixed at environment creation, so an existing public environment cannot be
-   converted — create a new one and redeploy.
-3. **Private DNS** resolution for the environment's default domain from the agent subnet. Unreachable
-   private MCP servers usually trace to a missing delegation or DNS, per the
+2. The gateway's Container Apps environment **injected into that subnet** and created with
+   `--internal-only true`. A VNet is fixed at environment creation, so an existing public
+   environment cannot be converted — create a new one and redeploy.
+3. The **app's** ingress set to `--ingress external` on that internal environment. This still has no
+   public entry point: "external" means VNet-facing, and the environment's load balancer holds a
+   private IP in your subnet. Using `--ingress internal` limits the app to the environment's own
+   service mesh, and Foundry — which sits outside it — gets `HTTP 404` from the load balancer while
+   the container looks perfectly healthy. Switching to `external` also drops the `.internal.` label
+   from the FQDN, so update the connection target and toolbox `server_url` to match.
+4. **Private DNS** for the environment's default domain, linked to the agent subnet's VNet: a zone
+   named after the default domain, with a wildcard `A` record pointing at the environment's static
+   IP. Unreachable private MCP servers usually trace to a missing delegation or DNS, per the
    [MCP auth troubleshooting table](https://learn.microsoft.com/azure/foundry/agents/how-to/mcp-authentication#troubleshooting).
+
+Verified on this project: with the gateway on an internal environment and the Foundry account at
+`publicNetworkAccess=Disabled`, Teams retrieved a document and its source link while the same
+endpoint returned `403` from outside the network.
 
 Two things still need to work outbound. The gateway performs the On-Behalf-Of exchange against
 `login.microsoftonline.com` and then calls the Retrieval API, so it needs egress to both; if you
@@ -81,7 +92,11 @@ and token URLs point at Entra ID, not at the gateway, so no browser ever needs t
 
 1. The **MCP-OBO gateway deployed** and reachable from your Foundry project — see
    [gateway setup](obo-gateway/README.md); register its Entra app with
-   [scripts/Register-GatewayApp.ps1](../../../scripts/Register-GatewayApp.ps1).
+   [scripts/Register-GatewayApp.ps1](../../../scripts/Register-GatewayApp.ps1). **The SharePoint
+   site(s) this agent can read are set on the gateway**, via its `SHAREPOINT_SITE_URL` environment
+   variable — one URL, or several separated by commas. The agent passes only a query, so the scope
+   is operator-controlled; see
+   [scoping retrieval](obo-gateway/README.md#scoping-retrieval-to-one-or-more-sites).
 2. An existing Foundry project with a model deployment (e.g. `gpt-4.1`).
 3. **Python 3.12+**, PowerShell 7+, Azure CLI, and Azure Developer CLI with the Foundry extension.
 4. **Additional Azure resources:** an OAuth2 identity-passthrough connection and a Toolbox that wraps

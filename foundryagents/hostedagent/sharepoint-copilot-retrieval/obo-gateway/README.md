@@ -73,9 +73,30 @@ store or Key Vault references; do not embed them in the image or source control.
 | `REQUIRED_SCOPES` | `access_as_user` |
 | `SERVER_URL` | `https://<GATEWAY_HOST>` for protected-resource metadata |
 | `ENABLED_PROVIDERS` | `whoami,copilot_retrieval`; restrict diagnostics to authorized users |
-| `SHAREPOINT_SITE_URL` | Target site's full URL; leaving it empty removes the site filter |
+| `SHAREPOINT_SITE_URL` | One site URL, or several separated by commas; leaving it empty removes the site filter |
 | `RETRIEVAL_API_URL` | `https://graph.microsoft.com/v1.0/copilot/retrieval` |
 | `MAX_RESULTS` | Retrieval result cap; default `10` |
+
+### Scoping retrieval to one or more sites
+
+`SHAREPOINT_SITE_URL` accepts a comma-separated list. The provider joins the entries with KQL `OR`,
+so one agent can span several sites through a **single** tool, connection, and consent prompt:
+
+```bash
+SHAREPOINT_SITE_URL=https://contoso.sharepoint.com/sites/HR,https://contoso.sharepoint.com/sites/Policies
+```
+
+The tool accepts only a query, so the scope stays operator-controlled — a prompt cannot widen it.
+The gateway logs its effective scope on startup; watch for this line, because an empty value is
+valid and silently searches every site the signed-in user can access:
+
+```text
+copilot_retrieval scope: NO site filter - retrieval spans every SharePoint site ...
+```
+
+Path filters break silently if a site is renamed or moved, returning no results rather than an
+error. Where that matters, filter on site IDs instead — see the
+[filterExpression reference](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/copilotroot-retrieval#examples).
 
 ### Create the connection and Toolbox
 
