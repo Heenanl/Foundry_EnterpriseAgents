@@ -10,23 +10,33 @@ project. Agent Framework, Responses protocol.
 
 A hosted container authenticates to Foundry with its **own agent identity** (app-only), which cannot
 read a user's SharePoint content. So the agent calls a **Foundry Toolbox** wrapping an **OAuth2
-identity-passthrough** connection: Foundry brokers the signed-in user's token server-side and forwards
-it to the OBO MCP server, which performs the **On-Behalf-Of** exchange and calls the **Microsoft 365
-Copilot Retrieval API** as that user, scoped by `filterExpression`. See
-[`main.py`](agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py).
+identity-passthrough** connection. Two distinct things happen, and it is worth separating them:
+
+- **Passthrough (Foundry → MCP server).** The user signs in to **Entra** once, which issues a token
+  whose audience is the MCP server's own app. Foundry caches that token and forwards it **unchanged**.
+  Nothing is exchanged here.
+- **Exchange (MCP server → Graph).** That token is only valid for the MCP server, so the server runs a
+  real **On-Behalf-Of** exchange (`acquire_token_on_behalf_of`) to obtain a Graph token, then calls the
+  **Microsoft 365 Copilot Retrieval API** as that user, scoped by `filterExpression`.
+
+See [`main.py`](agent-framework-agent-with-foundry-toolbox-responses/src/agent-framework-agent-sharepoint-copilot-retrieval/main.py)
+and [`obo.py`](obo-mcp-server/server/obo.py).
 
 ```mermaid
 flowchart LR
     U[Signed-in user] -->|prompt| A[Hosted agent<br/>agent identity]
     A -->|agent token| TB[Toolbox MCP<br/>sharepoint-retrieval-tools]
-    TB -->|forwards USER token<br/>OAuth2 passthrough| GW[OBO MCP server]
-    GW -->|OBO exchange| E[Entra ID]
-    GW -->|as the user, site-scoped| RET[(Copilot Retrieval API)]
-    U -.->|first-time OAuth consent| GW
+    U -.->|1 first-time sign-in| E[Entra ID]
+    E -.->|2 token for the MCP server<br/>cached by Foundry| TB
+    TB -->|3 forwards that USER token<br/>passthrough, no exchange| GW[OBO MCP server]
+    GW -->|4 OBO exchange<br/>user token to Graph token| E
+    GW -->|5 as the user, site-scoped| RET[(Copilot Retrieval API)]
 ```
 
 Sign-in is **interactive tool OAuth consent**, not silent Teams SSO, and each agent gets its own
-auto-bot. Publishing uses the repo's native Microsoft 365 route — no bridge required.
+auto-bot. In Teams the user sees two prompts on first use: a Foundry sign-in for the agent itself,
+then the tool consent above. Publishing uses the repo's native Microsoft 365 route — no bridge
+required.
 
 **Private networking.** The two legs lock down independently. Inbound, the Teams route survives
 `publicNetworkAccess=Disabled`. Outbound, the Toolbox call to the MCP server is egress, so enabling
