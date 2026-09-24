@@ -7,12 +7,12 @@ Copilot Retrieval API **as the user**, site-scoped — so results are permission
 
 ## How it works
 
-The supported [SharePoint retrieval sample](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) publishes on the **Foundry auto-bot** via an OAuth2
+The supported [SharePoint retrieval sample](../../../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) publishes on the **Foundry-managed bot** via an OAuth2
 identity-passthrough connection and **interactive tool OAuth consent**. This bot instead provides
 **shared multiagent routing, Teams SSO, and explicit user-token forwarding**. SSO can be silent when
 consent and tenant policies permit; an interactive fallback may be required.
 
-> Trade-off: this replaces the Foundry auto-bot with a **custom bot** you deploy and register; it is
+> Trade-off: this replaces the Foundry-managed bot with a **custom bot** you deploy and register; it is
 > not the only working per-user route. `x-ms-user-identity` alone is
 > session **isolation**, not a per-user OAuth token selector — see
 > [Microsoft Q&A 12912519](https://learn.microsoft.com/answers/a/12912519).
@@ -147,7 +147,7 @@ bot routes to the target agent at runtime:
 You'd only add a second Azure Bot / Teams app if the client wants an agent to appear as a *separate*
 installable Teams app (a UX choice, not a requirement).
 
-**The Foundry auto-bot is NOT reused automatically.** Publishing an agent to Teams creates an auto-bot
+**The Foundry-managed bot is NOT reused automatically.** Publishing an agent to Teams creates a Foundry-managed bot
 pointing at the agent's `…/activityprotocol` (the shared/no-SSO relay). This custom bot is a *separate*
 messaging endpoint; users install the **custom bot's** Teams app for the per-user path.
 
@@ -162,7 +162,7 @@ Use [the package generator](../hosted-agent/teams-app/New-TeamsAppPackage.ps1) f
 The [manifest template](../hosted-agent/teams-app/manifest.template.json) binds `bots[0].botId` and
 `webApplicationInfo.id` to the shared app, with resource `api://botid-<APP_ID>` and
 `token.botframework.com` in `validDomains`. Review app metadata, then upload the package under
-your organization's Teams approval policy. Install the **custom bot's** app, not the Foundry auto-bot app.
+your organization's Teams approval policy. Install the **custom bot's** app, not the Foundry-managed bot app.
 
 Complete the [two-user validation checklist](../../../guides/verify-per-user-isolation.md)
 with separate user profiles and conversations, including `/agents` and `/use` routing. User A should

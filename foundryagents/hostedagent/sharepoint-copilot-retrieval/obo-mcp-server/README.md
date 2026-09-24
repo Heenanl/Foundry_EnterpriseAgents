@@ -10,7 +10,7 @@ calls the **Copilot Retrieval API**, using a configured SharePoint site filter.
 
 ```mermaid
 flowchart LR
-    U([Teams user]) --> BOT[Foundry auto-bot<br/>unchanged] --> AG[Hosted agent]
+    U([Teams user]) --> BOT[Foundry-managed bot<br/>unchanged] --> AG[Hosted agent]
     AG -->|MCP tool call| GW["OBO MCP server<br/>App Service or Container Apps"]
     F[Foundry OAuth2 identity-passthrough<br/>connection brokers the user token] -.->|Authorization: user token| GW
     GW -->|OBO exchange to provider scopes| E[Entra]
@@ -202,7 +202,7 @@ replace validation through Teams and Toolbox. Keep bearer tokens out of diagnost
 
 ## Publish to Teams
 
-Publish the [hosted agent](../README.md#publish-to-teams), not the gateway. The auto-bot
+Publish the [hosted agent](../README.md#publish-to-teams), not the gateway. The Foundry-managed bot
 can surface **tool OAuth consent**; this is not silent Teams SSO. Validate private-network changes
 separately from the public-project starting configuration.
 
