@@ -21,7 +21,7 @@ They differ in **how the user's identity reaches the retrieval call**.
 
 Hosted agent (Agent Framework) → a **Foundry Toolbox** wrapping an **OAuth2 identity-passthrough
 connection** → the **OBO MCP server** → Copilot Retrieval. Foundry renders an *"Open sign-in link"*
-consent card in Teams and brokers the user's token server-side. Keeps the **Foundry auto-bot** (no
+consent card in Teams and brokers the user's token server-side. Keeps the **Foundry-managed bot** (no
 custom bot). The agent uses **`FoundryToolbox` + `ResponsesHostServer`**, not
 `x-client-user-token` or a local OBO fallback. The documented starting configuration is a **public**
 Foundry project. Private-network operation requires separate end-to-end validation; opening the
@@ -80,20 +80,20 @@ validate the bot-to-Foundry route with the intended public-access settings.
 | Isolation requirement | Validate authenticated tool identity, retrieval outputs, and user sessions | Validate token handling, retrieval outputs, and user sessions |
 | Network boundary | Public-project starting configuration; private-network integration requires separate validation | Bot must reach Foundry; private-only routing requires separate validation |
 | Caller authorization | **Foundry Agent Consumer** for callers at the narrowest supported agent/project scope; verify endpoint policy rather than assuming `BotServiceRbac` removes grants | Bot MI has **Foundry Agent Consumer** on each allowed agent; user token is separate |
-| Custom bot registration | **None** (Foundry auto-bot) | **One shared** bot (never per-agent) |
+| Custom bot registration | **None** (Foundry-managed bot) | **One shared** bot (never per-agent) |
 | APIM required | **No** — a private agent admits Teams traffic with `enable_m365_public_endpoint` | Not for OBO; bot still needs an authorized network route to Foundry |
 | Agent style | Agent Framework container (`FoundryToolbox` + `ResponsesHostServer`) + gateway | Bring-your-own container (in-code OBO) |
 | Other downstream tools | Validate each connection and provider's delegated-auth behavior separately | Requires a compatible delegated flow and additional implementation |
 | Token handling | Foundry brokers tool credentials; gateway handles OBO tokens | Bot Service manages sign-in; bot forwards the assertion and agent handles OBO tokens |
 | Output quality | Native Agent Framework **inline citations** | Model synthesis + **Sources** footer |
 | Setup complexity | Lower (connection + toolbox) | Higher (bot + Bot OAuth connection + manifest) |
-| Moving parts to operate | Foundry connection, Toolbox, gateway, auto-bot | App Service bot, Bot registration, Teams manifest, OBO app |
+| Moving parts to operate | Foundry connection, Toolbox, gateway, Foundry-managed bot | App Service bot, Bot registration, Teams manifest, OBO app |
 
 ## Pros / cons
 
 ### Path A — Toolbox passthrough
 
-- **Pros:** keeps the Foundry auto-bot; centralizes OBO in a reusable gateway; no custom Teams bot.
+- **Pros:** keeps the Foundry-managed bot; centralizes OBO in a reusable gateway; no custom Teams bot.
 - **Cons:** interactive tool consent; gateway operation and OAuth connection provisioning;
   separate validation for private networks and endpoint authorization policy.
 
@@ -106,7 +106,7 @@ validate the bot-to-Foundry route with the intended public-access settings.
 
 ## Recommendation
 
-- Choose **Path A** when the **native auto-bot + tool OAuth consent** experience is suitable.
+- Choose **Path A** when the **native Foundry-managed bot + tool OAuth consent** experience is suitable.
 - Choose **Path B** for **one shared bot, multiagent routing, or explicit user-token control**,
   including custom integrations that need application-managed delegated tokens.
 - For **either path**, repeat identity, negative-access, session-isolation, and networking checks in

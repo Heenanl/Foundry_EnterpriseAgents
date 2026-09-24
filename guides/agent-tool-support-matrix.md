@@ -25,7 +25,7 @@ fails with "AppOnly OBO tokens not supported." Options 2 and 3 survive deploymen
 arrives through the connection's consent flow rather than the caller — Option 3 was built to overcome the limitations of sharepoint_grounding_tool and get site-scoped Retrieval API results into a deployed, Teams-published agent.
 
 
-Publishing is the same for all four — the Foundry auto-bot via
+Publishing is the same for all four — the Foundry-managed bot via
 [`scripts/Publish-AgentToTeams.ps1`](../scripts/Publish-AgentToTeams.ps1), prompt agents included.
 
 A successful answer never proves trimming; verify the downstream caller identity yourself. These
@@ -38,12 +38,12 @@ not a sample setting.
 | --- | --- | --- |
 | SharePoint grounding tool | Managed grounding with site/folder scope | Requires delegated context; not an app-only hosted-container route |
 | Work IQ | Broad Microsoft 365 context without a custom retrieval gateway | No site-specific scope; review connection-specific licensing and consent |
-| SharePoint retrieval (Toolbox + OBO MCP server) | Keeps the Foundry auto-bot; centralizes OBO in one server | Interactive tool OAuth consent and an extra service to operate |
+| SharePoint retrieval (Toolbox + OBO MCP server) | Keeps the Foundry-managed bot; centralizes OBO in one server | Interactive tool OAuth consent and an extra service to operate |
 | Model-only prompt agent | No retrieval infrastructure | Cannot provide permission-trimmed enterprise grounding |
 
 ## Recommendation
 
-- For **hosted, site-scoped SharePoint retrieval**, use the Foundry auto-bot plus interactive tool consent. A retired shared-bot variant with silent Teams SSO is kept for reference in [deprecated/pathB](../deprecated/pathB/README.md).
+- For **hosted, site-scoped SharePoint retrieval**, use the Foundry-managed bot plus interactive tool consent. A retired shared-bot variant with silent Teams SSO is kept for reference in [deprecated/pathB](../deprecated/pathB/README.md).
 - For broad Microsoft 365 grounding, consider Work IQ. For a prompt-only solution, consider the SharePoint grounding sample and confirm current Teams/channel support.
 - Use **Foundry Agent Consumer** for invocation at the narrowest supported agent/project scope and **Foundry User** for the agent identity's model calls at project scope. Do not assume tenant publishing or `BotServiceRbac` removes caller authorization requirements.
 - Retrieval API pay-as-you-go requires at least one Microsoft 365 Copilot license in the tenant. Work IQ billing and SharePoint-agent billing do not automatically entitle the raw Retrieval API.

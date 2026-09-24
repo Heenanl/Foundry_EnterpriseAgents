@@ -107,7 +107,7 @@ the sample and is not required to deploy either path.
 ## Publish to Teams
 
 Use the [custom bot's Teams package instructions](teams-sso-bot/README.md#publish-to-teams), not
-the Foundry auto-bot publisher. Complete the
+the Foundry-managed bot publisher. Complete the
 [two-user validation checklist](../../guides/verify-per-user-isolation.md)
 for each allowed agent. The token-forwarding mechanism does not by itself certify session isolation.
 

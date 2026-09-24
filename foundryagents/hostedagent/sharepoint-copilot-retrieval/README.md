@@ -1,8 +1,8 @@
 # What this sample demonstrates
 
 A Foundry **hosted agent** that answers questions grounded in **one or more SharePoint sites**,
-trimmed to each signed-in user's permissions, and publishes to Microsoft Teams on the Foundry
-auto-bot — no custom bot. It reaches SharePoint through this repo's
+trimmed to each signed-in user's permissions, and publishes to Microsoft Teams on the Foundry-managed
+bot — no custom bot. It reaches SharePoint through this repo's
 **[OBO MCP server](obo-mcp-server/README.md)**. Verified end-to-end against a private Foundry
 project. Agent Framework, Responses protocol.
 
@@ -34,7 +34,7 @@ flowchart LR
 ```
 
 Sign-in is **interactive tool OAuth consent**, not silent Teams SSO, and each agent gets its own
-auto-bot. In Teams the user sees two prompts on first use: a Foundry sign-in for the agent itself,
+Foundry-managed bot. In Teams the user sees two prompts on first use: a Foundry sign-in for the agent itself,
 then the tool consent above. Publishing uses the repo's native Microsoft 365 route — no bridge
 required.
 
@@ -53,9 +53,10 @@ no public endpoint at all — see
    several separated by commas. The agent passes only a query, so the scope is operator-controlled.
 2. An existing Foundry project with a model deployment (e.g. `gpt-4.1`); **Python 3.12+**,
    PowerShell 7+, Azure CLI.
-3. **Roles (RBAC):** **Foundry Agent Consumer** for callers at the narrowest supported agent scope,
-   and **Foundry User** for the agent identity's model calls at project scope. Tenant publishing and
-   `BotServiceRbac` do not remove caller RBAC.
+3. **Roles (RBAC):** **Foundry Agent Consumer** at the narrowest supported scope is **sufficient for
+   callers** — verified end to end with `Foundry User` removed from the caller at both account and
+   project scope. The agent identity separately needs **Foundry User** at project scope for its model
+   calls. Do not broaden caller roles to fix a model authorization error.
 4. **Licensing:** a **Microsoft 365 Copilot** license per user, or **Retrieval API pay-as-you-go**
    (needs ≥1 Copilot license in the tenant) — otherwise the tool returns `403 … valid license`.
 5. **Additional Azure resources:** the `SharePointRetrievalOBO` connection + `sharepoint-retrieval-tools`
@@ -130,7 +131,7 @@ and verify it isn't returned.
 
 ## Publish to Teams
 
-The Foundry auto-bot is preserved; publish over the native Microsoft 365 route:
+The Foundry-managed bot is preserved; publish over the native Microsoft 365 route:
 
 ```powershell
 ./scripts/Publish-AgentToTeams.ps1 -ResourceGroup <RESOURCE_GROUP> `
