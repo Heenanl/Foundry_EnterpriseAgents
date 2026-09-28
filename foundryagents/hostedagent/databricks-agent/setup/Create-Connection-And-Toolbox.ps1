@@ -158,4 +158,4 @@ Write-Host "===== done =====" -ForegroundColor Green
 Write-Host "App        : $AppDisplayName ($appId)"
 Write-Host "Connection : $ConnectionName"
 Write-Host "Toolbox    : $ToolboxName"
-Write-Host "Next: deploy the hosted agent (README step 3), publish to Teams, then invoke and complete the one-time consent."
+Write-Host "Next: deploy the hosted agent (README 'Deploy' step 2), publish to Teams, then invoke and complete the one-time consent."

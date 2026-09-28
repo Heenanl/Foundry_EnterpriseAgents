@@ -57,12 +57,28 @@ Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCO
     -DatabricksHost <DATABRICKS_HOST> -GenieSpaceId <GENIE_SPACE_ID>
 ```
 
-**2. Deploy the hosted agent**
+**2. Initialize and deploy the hosted agent**
+
+Confirm the agent, model, connection and toolbox all belong to the **same project** before deploying.
 
 ```powershell
-cd agent-framework-agent-databricks
-azd ai agent deploy
+$PROJECT_ID = "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.CognitiveServices/accounts/<FOUNDRY_ACCOUNT>/projects/<PROJECT>"
+
+azd ai agent init -m agent-framework-agent-databricks/azure.yaml `
+  --project-id $PROJECT_ID --model-deployment gpt-4.1 --no-prompt --force -e databricks-genie
+azd env set enableHostedAgentVNext true -e databricks-genie
+# In the scaffolded agent.yaml, replace any ${{VAR}} with single-brace ${VAR}
+azd up -e databricks-genie
 ```
+
+**3. Invoke it**
+
+```powershell
+azd ai agent invoke --new-session "Show the top 10 customers by total spend." --timeout 120
+```
+
+The first call returns an **OAuth consent** URL. Approve it as a user who has `CAN_RUN` on the Genie
+space, then re-invoke.
 
 ## Publish to Teams
 
