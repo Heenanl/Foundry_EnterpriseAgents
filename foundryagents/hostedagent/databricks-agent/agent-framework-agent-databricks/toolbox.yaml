@@ -1,0 +1,22 @@
+# Toolbox that wraps the Azure Databricks Genie remote MCP server.
+# Created by ../setup/Create-Connection-And-Toolbox.ps1, which substitutes the
+# placeholders below and then runs:
+#   azd ai toolbox create databricks-tools --from-file toolbox.yaml
+#
+# Route for HOSTED agents: Genie remote MCP via a custom OAuth2 identity-passthrough
+# connection. On first use the signed-in user is prompted to sign in to Azure
+# Databricks and approve; Foundry holds that user's Databricks token server-side and
+# calls Genie on their behalf. A hosted container CAN complete this OAuth consent flow
+# (unlike Entra `UserEntraToken` passthrough).
+#
+# KNOWN GAP (see ../README.md): Foundry binds the first user who consents and reuses
+# that identity for every later caller on the Teams channel. Subsequent users are never
+# prompted and their Genie queries execute as the first consenter.
+#
+description: Azure Databricks Genie (natural-language analytics) via OAuth user delegation
+tools:
+  - type: mcp
+    server_label: databricks_genie
+    server_url: https://<databricks-workspace-host>/api/2.0/mcp/genie/<genie-space-id>
+    project_connection_id: AzureDatabricksGeniePassthrough
+    require_approval: never
