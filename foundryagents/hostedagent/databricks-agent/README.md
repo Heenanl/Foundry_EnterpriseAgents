@@ -66,13 +66,28 @@ Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCO
 
 Confirm the agent, model, connection and toolbox all belong to the **same project** before deploying.
 
+`azd ai agent init` **adopts** the sample into a new project directory, so run it from an **empty
+directory** and pass an absolute path to the sample's `azure.yaml`. Running it from the sample folder
+itself fails with `a project azure.yaml already exists ... cannot be adopted there`.
+
 ```powershell
 $PROJECT_ID = "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.CognitiveServices/accounts/<FOUNDRY_ACCOUNT>/projects/<PROJECT>"
+$SAMPLE = "<path-to-repo>/foundryagents/hostedagent/databricks-agent/agent-framework-agent-databricks"
 
-azd ai agent init -m agent-framework-agent-databricks/azure.yaml `
+New-Item -ItemType Directory -Force -Path ./deploy | Out-Null
+Set-Location ./deploy
+
+azd ai agent init -m "$SAMPLE/azure.yaml" `
   --project-id $PROJECT_ID --model-deployment gpt-4.1 --no-prompt --force -e databricks-genie
+```
+
+That scaffolds `./agent-framework-agent-databricks` with `azure.yaml`, `toolbox.yaml` and `src/`.
+Deploy from there:
+
+```powershell
+Set-Location ./agent-framework-agent-databricks
 azd env set enableHostedAgentVNext true -e databricks-genie
-# In the scaffolded agent.yaml, replace any ${{VAR}} with single-brace ${VAR}
+# If a scaffolded agent.yaml contains ${{VAR}}, replace it with single-brace ${VAR}
 azd up -e databricks-genie
 ```
 
@@ -134,6 +149,8 @@ under their own identity, so Unity Catalog permissions and lineage apply per use
 | **All users' queries run as whoever consented first** | The agent is not using `FoundryToolbox`. A hand-built MCP client that attaches the agent's own credential sends the agent identity on every toolbox call, so Foundry never sees the caller. Use `tools=FoundryToolbox(credential)`. |
 | Second user is never prompted for Databricks consent | Same cause as above. Each user should get their own consent card on first use. |
 | Consent fails with `redirect_uri mismatch` | The Foundry reply URL is not on the app. Re-run `setup/Create-Connection-And-Toolbox.ps1`; step 3 registers and verifies it. |
+| `azd ai agent init` fails with `a project azure.yaml already exists ... cannot be adopted there` | `init` adopts the sample into a new directory. Run it from an empty directory and pass an absolute path to the sample's `azure.yaml`. |
+| Data-plane calls return `500 InternalServerError: Unable to get resource information.` | The Foundry account is mid-update. Check `provisioningState` on the account — while it is `Accepted`, agent and toolbox APIs are unavailable. Avoid issuing a second `publicNetworkAccess` PATCH before the first reports `Succeeded`. |
 | `HTTP 401 invalid_token` in chat after ~a day | The access token expired and was not refreshed. Confirm `offline_access` is in the connection `scopes`; managed-provider connections cannot set it. |
 | Agent replies "there was an issue retrieving…" then works on retry | Either the SQL warehouse auto-started from stopped, or the model called `poll_response` before `query_space`. The agent instructions in `main.py` pin that ordering. |
 | Teams app shows a truncated name | Teams caps the app short name at 30 characters. |
