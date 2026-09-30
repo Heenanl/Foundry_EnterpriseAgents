@@ -120,22 +120,24 @@ scope needs Microsoft 365 admin approval before the agent appears under **Built 
 
 ## Verifying per-user identity
 
-**Verified 2026-09-28** on this configuration — hosted agent + toolbox + OAuth identity passthrough +
-direct bot endpoint + `publicNetworkAccess=Disabled`.
+**Verified** on hosted agent + toolbox + OAuth identity passthrough + direct bot endpoint, with both
+`publicNetworkAccess=Disabled` (2026-09-28) and `Enabled` (2026-09-30).
 
 Have two users each ask about a **different** slice of the data from Teams, so attribution is
 unambiguous, then read Databricks **query history** (not the Genie monitoring view — monitoring
 reports the Genie-space caller, query history reports the identity that executed the SQL):
 
 ```
-21:23:25  BRONZE  testuser@...   <- testuser asked
-21:24:07  BRONZE  testuser@...   <- testuser asked
-21:26:18  SILVER  admin@...      <- admin asked
-21:26:20  SILVER  admin@...      <- admin asked
+2026-09-30 (UTC)
+14:52:59  BRONZE  testuser@...   <- testuser asked
+14:54:28  BRONZE  testuser@...   <- testuser asked
+14:54:33  SILVER  admin@...      <- admin asked
+14:54:40  SILVER  admin@...      <- admin asked
 ```
 
 Each user is prompted for their **own** Databricks OAuth consent on first use, and their queries run
-under their own identity, so Unity Catalog permissions and lineage apply per user.
+under their own identity, so Unity Catalog permissions and lineage apply per user. Later sessions
+reuse each user's stored token without prompting again.
 
 > **`user.id` is not a per-user signal.** In Application Insights, Foundry emitted a single constant
 > `user.id` for both callers even when attribution was correct, and `user_Id` /
