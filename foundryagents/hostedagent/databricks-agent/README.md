@@ -14,7 +14,7 @@ Per-user identity propagation is **verified working** in Teams — see
 flowchart LR
     U[User in Teams] -->|activity protocol| F[Foundry hosted agent]
     F -->|FoundryToolbox, caller context| T[Toolbox databricks-tools]
-    T -->|connection AzureDatabricksGeniePassthrough| G[Genie remote MCP]
+    T -->|connection DatabricksGenie| G[Genie remote MCP]
     G -->|SQL as the signed-in user| W[(Unity Catalog / SQL warehouse)]
     U -.->|per-user OAuth consent| E[Entra -> Azure Databricks]
 ```
@@ -87,6 +87,8 @@ Deploy from there:
 ```powershell
 Set-Location ./agent-framework-agent-databricks
 azd env set enableHostedAgentVNext true -e databricks-genie
+# init's --model-deployment does not populate this; azure.yaml reads it and the agent exits without it
+azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME gpt-4.1 -e databricks-genie
 # If a scaffolded agent.yaml contains ${{VAR}}, replace it with single-brace ${VAR}
 azd up -e databricks-genie
 ```
@@ -152,6 +154,8 @@ reuse each user's stored token without prompting again.
 | Second user is never prompted for Databricks consent | Same cause as above. Each user should get their own consent card on first use. |
 | Consent fails with `redirect_uri mismatch` | The Foundry reply URL is not on the app. Re-run `setup/Create-Connection-And-Toolbox.ps1`; step 3 registers and verifies it. |
 | `azd ai agent init` fails with `a project azure.yaml already exists ... cannot be adopted there` | `init` adopts the sample into a new directory. Run it from an empty directory and pass an absolute path to the sample's `azure.yaml`. |
+| Response fails with `The ConnectorGateway connection name exceeds the maximum allowed length of 96 characters` | Foundry derives a longer per-user name from the connection name. Keep the connection name short: `DatabricksGenie` (15) and `DatabricksGenieV2` (17) work, `AzureDatabricksGeniePassthrough` (31) fails. The setup script caps it at 20. |
+| Agent exits at startup with `Set AZURE_AI_MODEL_DEPLOYMENT_NAME.` | `azd ai agent init --model-deployment` does not set this azd variable. Run `azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME <deployment>` before `azd up`. |
 | Data-plane calls return `500 InternalServerError: Unable to get resource information.` | The Foundry account is mid-update. Check `provisioningState` on the account — while it is `Accepted`, agent and toolbox APIs are unavailable. Avoid issuing a second `publicNetworkAccess` PATCH before the first reports `Succeeded`. |
 | `HTTP 401 invalid_token` in chat after ~a day | The access token expired and was not refreshed. Confirm `offline_access` is in the connection `scopes`; managed-provider connections cannot set it. |
 | Agent replies "there was an issue retrieving…" then works on retry | Either the SQL warehouse auto-started from stopped, or the model called `poll_response` before `query_space`. The agent instructions in `main.py` pin that ordering. |

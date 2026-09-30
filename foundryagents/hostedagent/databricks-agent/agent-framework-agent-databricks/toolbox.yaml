@@ -18,5 +18,5 @@ tools:
   - type: mcp
     server_label: databricks_genie
     server_url: https://<databricks-workspace-host>/api/2.0/mcp/genie/<genie-space-id>
-    project_connection_id: AzureDatabricksGeniePassthrough
+    project_connection_id: DatabricksGenie
     require_approval: never

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-# The Genie connection (AzureDatabricksGeniePassthrough) and toolbox (databricks-tools)
+# The Genie connection (DatabricksGenie) and toolbox (databricks-tools)
 # are created out-of-band by setup/Create-Connection-And-Toolbox.ps1, because the OAuth2
 # identity-passthrough connection needs an Entra app client id + secret and the Entra
 # authorize/token endpoints. This manifest defines only the hosted agent; at runtime the

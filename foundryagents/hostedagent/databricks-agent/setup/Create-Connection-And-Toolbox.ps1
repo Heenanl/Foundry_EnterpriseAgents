@@ -8,7 +8,7 @@
     1. Register an Entra app with delegated `user_impersonation` on Azure Databricks
        (resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d) + Microsoft Graph `offline_access`,
        and mint a client secret.
-    2. azd ai connection create (kind remote-tool, auth-type oauth2) -> AzureDatabricksGeniePassthrough
+    2. azd ai connection create (kind remote-tool, auth-type oauth2) -> DatabricksGenie
     3. Read the per-connection reply URL Foundry generated (ARM control plane) and register it
        on the app, so consent doesn't fail with a redirect_uri mismatch.
     4. azd ai toolbox create databricks-tools --from-file toolbox.yaml
@@ -49,7 +49,9 @@ param(
   [string]$TenantId = (az account show --query tenantId -o tsv),
   [string]$AppDisplayName = "databricks-genie-passthrough",
   [string]$ClientSecret,                            # supply to reuse an existing secret
-  [string]$ConnectionName = "AzureDatabricksGeniePassthrough",
+  # Foundry derives a per-user ConnectorGateway name (max 96 chars) from this; 17 chars verified, 31 fails.
+  [ValidateLength(1, 20)]
+  [string]$ConnectionName = "DatabricksGenie",
   [string]$ToolboxName = "databricks-tools",
   [string]$ToolboxFile = (Join-Path $PSScriptRoot "..\agent-framework-agent-databricks\toolbox.yaml")
 )
