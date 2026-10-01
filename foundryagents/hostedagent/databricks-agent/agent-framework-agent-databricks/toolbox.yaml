@@ -9,10 +9,6 @@
 # calls Genie on their behalf. A hosted container CAN complete this OAuth consent flow
 # (unlike Entra `UserEntraToken` passthrough).
 #
-# KNOWN GAP (see ../README.md): Foundry binds the first user who consents and reuses
-# that identity for every later caller on the Teams channel. Subsequent users are never
-# prompted and their Genie queries execute as the first consenter.
-#
 description: Azure Databricks Genie (natural-language analytics) via OAuth user delegation
 tools:
   - type: mcp

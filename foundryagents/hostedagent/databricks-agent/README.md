@@ -5,8 +5,8 @@ An Agent Framework **hosted agent** that answers analytical questions over an Az
 The connection uses a custom **OAuth2 identity-passthrough** flow: on first use each signed-in user
 consents to Azure Databricks, and Foundry calls Genie with that user's token.
 
-Per-user identity propagation is **verified working** in Teams — see
-[Verifying per-user identity](#verifying-per-user-identity).
+Each Teams user's Genie queries run under **their own** Databricks identity — see
+[Verify per-user identity](#verify-per-user-identity).
 
 ## How it works
 
@@ -25,16 +25,12 @@ carries the caller's context so Foundry can resolve that user's Databricks token
 
 Three details worth knowing:
 
-- **Use `FoundryToolbox`.** Building the MCP client by hand (for example `MCPStreamableHTTPTool` with
-  an `httpx.Auth` that attaches the agent's own credential) sends the **agent identity** on every
-  toolbox call. Per-user identity is then lost and every caller inherits whoever consented first.
-  See [Troubleshooting](#troubleshooting).
+- **Use `FoundryToolbox`.** It forwards the Foundry per-request call ID, which is how Foundry knows
+  which user a tool call belongs to. A hand-built MCP client that only attaches the agent's own
+  credential loses that, and every caller inherits whoever consented first.
 - This is the **custom** OAuth2 connection route, not the managed Databricks catalog connector
-  (`foundrydatabricksmcp`). Managed-provider connections expose no `scopes` field (`scopes: null`)
-  and no authorize/token endpoints, so `offline_access` cannot be requested and the token is never
-  refreshed.
-- A hosted container **can** complete this OAuth consent flow, unlike Entra `UserEntraToken`
-  passthrough, which requires an interactive client.
+  (`foundrydatabricksmcp`). Managed-provider connections expose no `scopes` field, so
+  `offline_access` cannot be requested and the token is never refreshed.
 - A hosted container **can** complete this OAuth consent flow, unlike Entra `UserEntraToken`
   passthrough, which requires an interactive client.
 
@@ -67,8 +63,7 @@ Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCO
 Confirm the agent, model, connection and toolbox all belong to the **same project** before deploying.
 
 `azd ai agent init` **adopts** the sample into a new project directory, so run it from an **empty
-directory** and pass an absolute path to the sample's `azure.yaml`. Running it from the sample folder
-itself fails with `a project azure.yaml already exists ... cannot be adopted there`.
+directory** and pass an absolute path to the sample's `azure.yaml`.
 
 ```powershell
 $PROJECT_ID = "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.CognitiveServices/accounts/<FOUNDRY_ACCOUNT>/projects/<PROJECT>"
@@ -87,9 +82,8 @@ Deploy from there:
 ```powershell
 Set-Location ./agent-framework-agent-databricks
 azd env set enableHostedAgentVNext true -e databricks-genie
-# init's --model-deployment does not populate this; azure.yaml reads it and the agent exits without it
+# Model deployment the agent uses (read by azure.yaml)
 azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME gpt-4.1 -e databricks-genie
-# If a scaffolded agent.yaml contains ${{VAR}}, replace it with single-brace ${VAR}
 azd up -e databricks-genie
 ```
 
@@ -118,50 +112,22 @@ script, which points the bot at the agent's own Activity Protocol route — no A
 source IPs on **only** that route while the account keeps `publicNetworkAccess=Disabled`. Tenant
 scope needs Microsoft 365 admin approval before the agent appears under **Built by your org**.
 
-> The Teams app short name is truncated at **30 characters**, so a long `-DisplayName` loses its tail.
+## Verify per-user identity
 
-## Verifying per-user identity
-
-**Verified** on hosted agent + toolbox + OAuth identity passthrough + direct bot endpoint, with both
-`publicNetworkAccess=Disabled` (2026-09-28) and `Enabled` (2026-09-30).
+Verified with hosted agent + toolbox + OAuth identity passthrough + direct bot endpoint, with
+`publicNetworkAccess` both `Disabled` and `Enabled`.
 
 Have two users each ask about a **different** slice of the data from Teams, so attribution is
-unambiguous, then read Databricks **query history** (not the Genie monitoring view — monitoring
-reports the Genie-space caller, query history reports the identity that executed the SQL):
+unambiguous, then read Databricks **query history**, which reports the identity that executed the SQL:
 
 ```
-2026-09-30 (UTC)
-14:52:59  BRONZE  testuser@...   <- testuser asked
-14:54:28  BRONZE  testuser@...   <- testuser asked
-14:54:33  SILVER  admin@...      <- admin asked
-14:54:40  SILVER  admin@...      <- admin asked
+BRONZE  user-a@...   <- user A asked
+SILVER  user-b@...   <- user B asked
 ```
 
 Each user is prompted for their **own** Databricks OAuth consent on first use, and their queries run
 under their own identity, so Unity Catalog permissions and lineage apply per user. Later sessions
 reuse each user's stored token without prompting again.
-
-> **`user.id` is not a per-user signal.** In Application Insights, Foundry emitted a single constant
-> `user.id` for both callers even when attribution was correct, and `user_Id` /
-> `user_AuthenticatedId` were empty on every record. Use Databricks query history to verify
-> identity, not the telemetry `user.id`.
-
-## Troubleshooting
-
-| Symptom | Cause / fix |
-| --- | --- |
-| **All users' queries run as whoever consented first** | The agent is not using `FoundryToolbox`. A hand-built MCP client that attaches the agent's own credential sends the agent identity on every toolbox call, so Foundry never sees the caller. Use `tools=FoundryToolbox(credential)`. |
-| Second user is never prompted for Databricks consent | Same cause as above. Each user should get their own consent card on first use. |
-| Consent fails with `redirect_uri mismatch` | The Foundry reply URL is not on the app. Re-run `setup/Create-Connection-And-Toolbox.ps1`; step 3 registers and verifies it. |
-| `azd ai agent init` fails with `a project azure.yaml already exists ... cannot be adopted there` | `init` adopts the sample into a new directory. Run it from an empty directory and pass an absolute path to the sample's `azure.yaml`. |
-| Response fails with `The ConnectorGateway connection name exceeds the maximum allowed length of 96 characters` | Foundry derives a longer per-user name from the connection name. Keep the connection name short: `DatabricksGenie` (15) and `DatabricksGenieV2` (17) work, `AzureDatabricksGeniePassthrough` (31) fails. The setup script caps it at 20. |
-| Agent exits at startup with `Set AZURE_AI_MODEL_DEPLOYMENT_NAME.` | `azd ai agent init --model-deployment` does not set this azd variable. Run `azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME <deployment>` before `azd up`. |
-| Data-plane calls return `500 InternalServerError: Unable to get resource information.` | The Foundry account is mid-update. Check `provisioningState` on the account — while it is `Accepted`, agent and toolbox APIs are unavailable. Avoid issuing a second `publicNetworkAccess` PATCH before the first reports `Succeeded`. |
-| `HTTP 401 invalid_token` in chat after ~a day | The access token expired and was not refreshed. Confirm `offline_access` is in the connection `scopes`; managed-provider connections cannot set it. |
-| Agent replies "there was an issue retrieving…" then works on retry | Either the SQL warehouse auto-started from stopped, or the model called `poll_response` before `query_space`. The agent instructions in `main.py` pin that ordering. |
-| Teams app shows a truncated name | Teams caps the app short name at 30 characters. |
-| `404` from the toolbox endpoint | `TOOLBOX_NAME` does not match a toolbox in the project, or its default version was not published. |
-| Queries attributed to the wrong user | See the first row — check that `FoundryToolbox` is used. |
 
 ## Next steps
 
@@ -169,4 +135,10 @@ reuse each user's stored token without prompting again.
 - [Verify per-user isolation](../../../guides/verify-per-user-isolation.md) — how to prove permission trimming.
 - [SharePoint Copilot retrieval sample](../sharepoint-copilot-retrieval/README.md) — the same passthrough pattern against a custom MCP server.
 - [Publish to a virtual network](https://learn.microsoft.com/azure/foundry/agents/how-to/publish-copilot-virtual-network) — Microsoft Learn.
-- [Set up tracing in Microsoft Foundry](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup) — enabling the `user.id` telemetry used above.
+- [Toolbox authentication](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication) — Microsoft Learn.
+- [Microsoft Foundry Toolbox (`FoundryToolbox`)](https://learn.microsoft.com/agent-framework/integrations/by-component/tools/foundry-toolbox) — Agent Framework docs.
+
+## Acknowledgements
+
+Thanks to **Mahya Gheini** and **Linda Li** from the Microsoft Foundry product and engineering team
+for their guidance on toolbox OAuth identity passthrough and for helping validate this sample.

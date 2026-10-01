@@ -49,7 +49,7 @@ param(
   [string]$TenantId = (az account show --query tenantId -o tsv),
   [string]$AppDisplayName = "databricks-genie-passthrough",
   [string]$ClientSecret,                            # supply to reuse an existing secret
-  # Foundry derives a per-user ConnectorGateway name (max 96 chars) from this; 17 chars verified, 31 fails.
+  # Kept short: Foundry derives a longer per-user name from it, capped at 96 characters.
   [ValidateLength(1, 20)]
   [string]$ConnectionName = "DatabricksGenie",
   [string]$ToolboxName = "databricks-tools",
