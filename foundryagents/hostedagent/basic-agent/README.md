@@ -24,7 +24,9 @@ container.
    [azure.yaml](azure.yaml)).
 2. **Azure CLI** and **Azure Developer CLI** 1.27.1+ with the Foundry extension:
    `azd ext install microsoft.foundry`.
-3. **Foundry User** on the project. The agent identity also needs **Foundry User** for model access.
+3. **Roles (RBAC):** **Foundry User** on the project to deploy the agent, and **Foundry User** for
+   the agent identity's model calls. People who only *chat* with the agent need
+   **Foundry Agent Consumer** — not Foundry User.
 4. **Python 3.12+** only if you want to run the agent locally.
 
 Placeholders used below: `<FOUNDRY_ACCOUNT>`, `<PROJECT>`, `<PROJECT_ARM_ID>`, `<RESOURCE_GROUP>`.

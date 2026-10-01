@@ -1,7 +1,7 @@
 # What this sample demonstrates
 
 A Foundry **hosted agent** that reads **SharePoint (and other Microsoft 365)** content **on behalf of
-the signed-in user** via **Work IQ**, and publishes to Microsoft Teams on the Foundry auto-bot. Verified
+the signed-in user** via **Work IQ**, and publishes to Microsoft Teams on the Foundry-managed bot. Verified
 end-to-end against a private Foundry project. Agent Framework, Responses protocol.
 
 ## How it works
@@ -121,7 +121,7 @@ verify it isn't returned.
 
 ## Publish to Teams
 
-The Foundry auto-bot is preserved; publish over the native Microsoft 365 route (the same user consent
+The Foundry-managed bot is preserved; publish over the native Microsoft 365 route (the same user consent
 + OBO happen server-side, unchanged from the playground):
 
 ```powershell

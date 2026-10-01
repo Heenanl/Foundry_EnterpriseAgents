@@ -3,7 +3,7 @@
 
 Foundry connects to this MCP server via an OAuth2 identity-passthrough connection and forwards the
 signed-in user's token as the request's Authorization header (the same mechanism Work IQ uses — so it
-works from a HOSTED agent published to Teams via the Foundry auto-bot, no custom Teams bot). For each
+works from a HOSTED agent published to Teams via the Foundry-managed bot, no custom Teams bot). For each
 MCP tool call, the gateway does an On-Behalf-Of exchange to the scopes the tool needs, then the
 provider calls the downstream API as the user.
 
