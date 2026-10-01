@@ -41,7 +41,8 @@ Three details worth knowing:
    permission to create connections and toolboxes in the Foundry project.
 5. For **every end user** of the agent:
    - **Search Index Data Reader** on the Search service, scoped to that service.
-   - **Foundry Agent Consumer** on the Foundry project, to call the agent.
+   - **Foundry Agent Consumer** at the narrowest supported scope, to call the agent. The agent
+     identity separately needs **Foundry User** at project scope for its model calls.
    - A **Microsoft 365 Copilot license**, required for query-time access to SharePoint.
    - Access to the SharePoint content in SharePoint itself. The agent never widens access.
 6. `az login` in the correct tenant, Python 3.11 or later, and `azd >= 1.27.1` with
@@ -55,7 +56,8 @@ az role assignment create --assignee <USER_OR_GROUP_OBJECT_ID> --role "Search In
 ```
 
 Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<SEARCH_SERVICE>`, `<SEARCH_RESOURCE_GROUP>`, `<TENANT>`, `<SITE>`, `<USER_OR_GROUP_OBJECT_ID>`.
+`<SEARCH_SERVICE>`, `<SEARCH_RESOURCE_GROUP>`, `<TENANT>`, `<SITE>`, `<USER_OR_GROUP_OBJECT_ID>`,
+`<path-to-repo>`.
 
 ## Deploy
 
@@ -104,6 +106,8 @@ Set-Location ./sharepoint-kb-agent
 azd env set enableHostedAgentVNext true -e sharepoint-kb
 # Model deployment the agent uses (read by azure.yaml)
 azd env set AZURE_AI_MODEL_DEPLOYMENT_NAME gpt-4.1 -e sharepoint-kb
+# Same value as TOOLBOX_NAME in setup/.env
+azd env set TOOLBOX_NAME sp-kb-tools -e sharepoint-kb
 azd up -e sharepoint-kb
 ```
 
@@ -118,7 +122,7 @@ azd ai agent invoke --new-session "What does our onboarding guide say about MFA 
 Use the repo script, which points the bot at the agent's own Activity Protocol route:
 
 ```powershell
-../../../scripts/Publish-AgentToTeams.ps1 `
+<path-to-repo>/scripts/Publish-AgentToTeams.ps1 `
     -ResourceGroup <RESOURCE_GROUP> -AgentName sharepoint-kb-agent `
     -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> `
     -UseM365PublicEndpoint -DisplayName "SharePoint KB Agent" -PublishScope Tenant -AppVersion 1.0.0

@@ -38,15 +38,12 @@ CONNECTION_AUDIENCE = os.environ.get(
     "REMOTE_TOOL_AUDIENCE", "https://search.azure.com/"
 )
 CONNECTION_AUTH_TYPE = os.environ.get(
-    "REMOTE_TOOL_AUTH_TYPE", "ProjectManagedIdentity"
+    "REMOTE_TOOL_AUTH_TYPE", "UserEntraToken"
 )
 ARM_API_VERSION = "2025-10-01-preview"
 
-SUPPORTED_AUTH_TYPES = {
-    "ProjectManagedIdentity",
-    "AgenticIdentityToken",
-    "UserEntraToken",
-}
+# A remote SharePoint knowledge source requires the caller's own token; other modes fail at query time.
+SUPPORTED_AUTH_TYPES = {"UserEntraToken"}
 if CONNECTION_AUTH_TYPE not in SUPPORTED_AUTH_TYPES:
     raise ValueError(
         f"REMOTE_TOOL_AUTH_TYPE must be one of {sorted(SUPPORTED_AUTH_TYPES)}."
