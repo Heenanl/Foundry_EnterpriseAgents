@@ -13,7 +13,7 @@ SharePoint, Work IQ, and MCP integrations include preview features.
 
 | # | Tool / route | Backed by | Prompt Agent | Hosted Agent | Teams Publishing | Per-user (trimmed) | Scoping | Licensing | Docs | Repo sample |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | No — a deployed container has no user token (see note) | No — the tool doesn't work in Teams ([documented limitation](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint)) | Yes | Site/folder | Copilot license or Retrieval API paygo | [SharePoint tool](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint) | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
+| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | No — a deployed container has no user token (see note) | Yes | Yes | Site/folder | Copilot license or Retrieval API paygo | [SharePoint tool](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint) | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
 | 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Yes | Yes | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq) | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
 | 3 | SharePoint retrieval: Toolbox + OBO MCP server (**custom setup, superseded by option 4**) | Copilot Retrieval API | MCP integration possible; Not in this repository | Yes | Yes | Yes | Site/path in sample | Copilot license or Retrieval API paygo | [Toolbox](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [MCP](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol) · [Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview) | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
 | 4 | SharePoint knowledge base: Toolbox + Foundry IQ remote SharePoint knowledge source (**recommended**) | Azure AI Search knowledge base over the Copilot Retrieval API | Supported through Foundry IQ; Not in this repository | Yes | Yes | Yes | Site/path filter on the knowledge source | Copilot license per user, plus Azure AI Search | [Remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote) · [Foundry IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/foundry-iq-connect) · [Toolbox auth](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication) | [SharePoint knowledge base](../foundryagents/hostedagent/sharepoint-knowledge-base/README.md) |
@@ -29,7 +29,7 @@ server. Option 4 supersedes it with built-in Foundry IQ components and is the ro
 the Microsoft Foundry product team. It is in preview with general availability expected; prefer it
 for new work.
 
-Options 2–4 publish to Teams the same way, through
+Publishing is the same for all four, through
 [Publish-AgentToTeams.ps1](../scripts/Publish-AgentToTeams.ps1).
 
 ## Pros / cons
