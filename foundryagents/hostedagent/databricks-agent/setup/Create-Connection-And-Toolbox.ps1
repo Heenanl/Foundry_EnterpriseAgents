@@ -19,8 +19,9 @@
   `scopes` field (`scopes: null`) and no authorize/token endpoints, so `offline_access` cannot be
   requested and Foundry never refreshes the token.
 
-  Re-running is safe: the app is reused if it already exists, and a new secret is only minted when
-  one is not supplied via -ClientSecret.
+  Existing resources are never modified. The script checks up front and stops, before creating or
+  changing anything, if the connection or toolbox already exists. To reuse an Entra app pass its
+  -AppId; an app is never picked up by display name, because display names aren't unique.
 
 .NOTES
   Requires: az login (correct tenant), azd >= 1.27.1 with `azd ext install microsoft.foundry`.
@@ -48,6 +49,7 @@ param(
 
   [string]$TenantId = (az account show --query tenantId -o tsv),
   [string]$AppDisplayName = "databricks-genie-passthrough",
+  [string]$AppId,                                   # reuse this existing app instead of creating one
   [string]$ClientSecret,                            # supply to reuse an existing secret
   # Kept short: Foundry derives a longer per-user name from it, capped at 96 characters.
   [ValidateLength(1, 20)]
@@ -69,15 +71,35 @@ $tokenUrl = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token"
 # offline_access lets Foundry refresh the token; without it users re-consent on expiry.
 $scopes   = "$DATABRICKS_RESOURCE_APP_ID/user_impersonation,offline_access"
 
-# 1) Register (or reuse) the Entra app that fronts the passthrough connection.
-$appId = az ad app list --filter "displayName eq '$AppDisplayName'" --query "[0].appId" -o tsv
-if ($appId) {
-  Write-Host "Reusing existing app '$AppDisplayName' ($appId)"
+# 0) Preflight: stop before any side effect if the connection or toolbox already exists.
+$connUrl = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AccountName/projects/$ProjectName/connections/${ConnectionName}?api-version=2025-06-01"
+az rest --method get --url $connUrl -o none 2>$null
+if ($LASTEXITCODE -eq 0) { throw "Connection '$ConnectionName' already exists. Choose another -ConnectionName or delete it first." }
+$aiToken = az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv
+if ($LASTEXITCODE -ne 0) { throw "Could not get a token for the Foundry project." }
+try {
+  Invoke-RestMethod -Uri "$($ProjectEndpoint.TrimEnd('/'))/toolboxes/${ToolboxName}?api-version=v1" -Headers @{ Authorization = "Bearer $aiToken" } | Out-Null
+  throw "Toolbox '$ToolboxName' already exists. Choose another -ToolboxName or delete it first."
+}
+catch [Microsoft.PowerShell.Commands.HttpResponseException] {
+  if ($_.Exception.Response.StatusCode -ne 404) { throw }
+}
+
+# 1) Create the Entra app that fronts the passthrough connection, or reuse the one passed as -AppId.
+if ($AppId) {
+  az ad app show --id $AppId --query appId -o tsv | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Entra app '$AppId' was not found." }
+  Write-Host "Reusing Entra app $AppId"
 }
 else {
+  $sameName = @(az ad app list --filter "displayName eq '$AppDisplayName'" --query "[].appId" -o tsv)
+  if ($LASTEXITCODE -ne 0) { throw "Could not search Entra apps." }
+  if ($sameName.Count -gt 0) {
+    throw "An Entra app named '$AppDisplayName' already exists ($($sameName -join ', ')). Pass -AppId to reuse it, or choose another -AppDisplayName."
+  }
   Write-Host "Registering Entra app '$AppDisplayName' ..."
-  $appId = az ad app create --display-name $AppDisplayName --sign-in-audience AzureADMyOrg --query appId -o tsv
-  if (-not $appId) { throw "Could not create the Entra app '$AppDisplayName'." }
+  $AppId = az ad app create --display-name $AppDisplayName --sign-in-audience AzureADMyOrg --query appId -o tsv
+  if (-not $AppId) { throw "Could not create the Entra app '$AppDisplayName'." }
 }
 
 Write-Host "Setting delegated permissions (Databricks user_impersonation, Graph offline_access) ..."
@@ -120,13 +142,14 @@ if ($LASTEXITCODE -ne 0) { throw "Connection '$ConnectionName' creation failed."
 
 # 3) Read the reply URL Foundry generated for this connection and register it on the app.
 #    `azd ai connection show` does not surface it, so read the ARM control plane.
-$connUrl = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AccountName/projects/$ProjectName/connections/${ConnectionName}?api-version=2025-06-01"
 $replyUrl = az rest --method get --url $connUrl --query "properties.redirectUrl" -o tsv
 if (-not $replyUrl) { throw "Could not read the connection reply URL from $connUrl" }
 Write-Host "Foundry reply URL: $replyUrl"
 
 # az replaces the whole list, so merge with what is already registered.
-$existing = az ad app show --id $appId --query "web.redirectUris" -o json | ConvertFrom-Json
+$existingJson = az ad app show --id $appId --query "web.redirectUris" -o json
+if ($LASTEXITCODE -ne 0) { throw "Could not read redirect URIs for app $appId; not updating them." }
+$existing = $existingJson | ConvertFrom-Json
 $all = @(@($existing) + @($replyUrl) | Where-Object { $_ } | Select-Object -Unique)
 az ad app update --id $appId --web-redirect-uris $all
 if ($LASTEXITCODE -ne 0) { throw "Could not register the reply URL on app $appId." }

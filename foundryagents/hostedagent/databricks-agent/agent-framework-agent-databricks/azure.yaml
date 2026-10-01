@@ -29,8 +29,6 @@ services:
               value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
             - name: TOOLBOX_NAME
               value: databricks-tools
-            - name: ENABLE_TOOLBOX
-              value: "true"
         kind: hosted
         metadata:
             tags:

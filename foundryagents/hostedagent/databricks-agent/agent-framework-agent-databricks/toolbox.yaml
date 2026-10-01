@@ -6,8 +6,7 @@
 # Route for HOSTED agents: Genie remote MCP via a custom OAuth2 identity-passthrough
 # connection. On first use the signed-in user is prompted to sign in to Azure
 # Databricks and approve; Foundry holds that user's Databricks token server-side and
-# calls Genie on their behalf. A hosted container CAN complete this OAuth consent flow
-# (unlike Entra `UserEntraToken` passthrough).
+# calls Genie on their behalf.
 #
 description: Azure Databricks Genie (natural-language analytics) via OAuth user delegation
 tools:

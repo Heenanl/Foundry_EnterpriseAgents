@@ -23,7 +23,7 @@ The agent container never handles a user token. It consumes the toolbox through 
 ([main.py](agent-framework-agent-databricks/src/agent-framework-agent-databricks/main.py)), which
 carries the caller's context so Foundry can resolve that user's Databricks token server-side.
 
-Three details worth knowing:
+Two details worth knowing:
 
 - **Use `FoundryToolbox`.** It forwards the Foundry per-request call ID, which is how Foundry knows
   which user a tool call belongs to. A hand-built MCP client that only attaches the agent's own
@@ -31,8 +31,6 @@ Three details worth knowing:
 - This is the **custom** OAuth2 connection route, not the managed Databricks catalog connector
   (`foundrydatabricksmcp`). Managed-provider connections expose no `scopes` field, so
   `offline_access` cannot be requested and the token is never refreshed.
-- A hosted container **can** complete this OAuth consent flow, unlike Entra `UserEntraToken`
-  passthrough, which requires an interactive client.
 
 ## Prerequisites
 
