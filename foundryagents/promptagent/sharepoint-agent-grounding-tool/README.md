@@ -11,11 +11,11 @@ The SharePoint tool needs the user's delegated identity:
 | Runs under | Supported |
 | --- | --- |
 | Signed-in user (this sample, or the playground) | Yes |
+| Prompt agent published to Teams | Yes (verified in testing) |
 | Hosted agent container (app-only identity) | No |
-| Agent published to Teams | No |
 
-For Teams, use the [SharePoint knowledge base](../../hostedagent/sharepoint-knowledge-base/README.md)
-sample. See the [SharePoint tool limitations](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint).
+For hosted agents, use the [SharePoint knowledge base](../../hostedagent/sharepoint-knowledge-base/README.md)
+sample.
 
 ## Prerequisites
 
