@@ -42,7 +42,7 @@ Two details worth knowing:
 5. Permission to create Entra app registrations.
 
 Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<DATABRICKS_HOST>`, `<GENIE_SPACE_ID>`.
+`<DATABRICKS_HOST>`, `<GENIE_SPACE_ID>`, `<path-to-repo>`.
 
 ## Deploy
 
@@ -100,7 +100,7 @@ Foundry removes the one-click publish button for projects with private networkin
 script, which points the bot at the agent's own Activity Protocol route — no APIM bridge:
 
 ```powershell
-../../../scripts/Publish-AgentToTeams.ps1 `
+<path-to-repo>/scripts/Publish-AgentToTeams.ps1 `
     -ResourceGroup <RESOURCE_GROUP> -AgentName agent-framework-agent-databricks `
     -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> `
     -UseM365PublicEndpoint -PublishScope Tenant -AppVersion 1.0.0
