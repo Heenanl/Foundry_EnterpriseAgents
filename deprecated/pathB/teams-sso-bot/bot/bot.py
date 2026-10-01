@@ -4,7 +4,7 @@
 Flow per user message:
   1. An ``OAuthPrompt`` bound to the ``teams-sso`` Bot Service OAuth connection triggers Teams
      SILENT SSO (``signin/tokenExchange``). With the SSO app configured correctly
-     (scripts/Configure-TeamsSso-App.ps1) no consent card appears.
+     (../scripts/Configure-TeamsSso-App.ps1) no consent card appears.
   2. The prompt yields the user's delegated token (aud = SSO/OBO app, scope access_as_user).
   3. The bot calls the hosted agent with that token as ``x-client-user-token`` (see agent_client.py)
      and returns the answer.
