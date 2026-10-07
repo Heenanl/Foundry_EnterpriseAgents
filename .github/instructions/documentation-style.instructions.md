@@ -5,55 +5,36 @@ applyTo: "**/*.md"
 
 # Documentation style guide
 
-Apply these conventions to every `README.md` and `guides/*.md` in this repo so docs stay consistent
-and customer-shareable. Match the existing samples (e.g. `hostedagent/sharepoint-agent-workiq/README.md`,
-`hostedagent/sharepoint-copilot-retrieval/README.md`).
+Docs are for customers who want to replicate a sample. Keep them **crisp, concise, and easy to
+follow**. Match the existing samples, for example
+`foundryagents/hostedagent/sharepoint-knowledge-base/README.md`.
 
-## Structure — per-sample README
+## Sample README structure
 
-Use this section order (omit sections that don't apply; never invent new top-level shapes):
+Use this order and omit sections that don't apply:
 
-1. `# <Title>` — one H1 only, the sample name/purpose.
-2. **Intro paragraph** — 2–4 sentences: what it demonstrates, the protocol/framework, and the
-   headline behavior (e.g. "per-user, permission-trimmed … published to Teams").
-3. `## How it works` (or `## Why this exists`) — the mechanism, with a **Mermaid** diagram
-   (` ```mermaid ` + `flowchart LR`). Link the key source file inline.
-4. `## Prerequisites` — a **numbered** list. End with a `Placeholders used below:` line listing every
-   `<ANGLE_CAPS>` token used in commands.
-5. `## Deploy` (or `## Option 1: Azure Developer CLI (azd)` / `## Option 2: VS Code`) — copy-paste
-   PowerShell blocks.
+1. `# <Title>` — one H1.
+2. **Intro** — 1–2 sentences: what the sample does and the headline behavior.
+3. `## How it works` — a short **Mermaid** `flowchart LR` and a few sentences. Link the key source file.
+4. `## Prerequisites` — short bullets.
+5. `## Deploy` — numbered steps with copy-paste PowerShell blocks.
 6. `## Publish to Teams` — when relevant.
-7. `## Troubleshooting` — a **table**: `| Symptom | Cause / fix |`.
-8. `## Next steps` — bullet links to related docs.
+7. `## Verify` — short, when relevant.
+8. `## Learn more` — a few links.
 
-## Structure — decision guides (`guides/`)
+Do **not** add troubleshooting sections, symptom tables, or lists of past failures.
 
-Problem statement → the options (each with a short architecture + Mermaid) → a **decision matrix
-table** → **Pros / cons** per option → **Recommendation** → verification steps. Keep any
-product-group/roadmap notes in a dated section.
+## Formatting
 
-## Formatting rules
+- One `#` heading; sections are `##`, sub-sections `###`.
+- Bold key terms sparingly. Use backticks for identifiers, env vars, paths, roles, and commands.
+- Relative links for repo files; real Microsoft Learn URLs. Never fabricate links.
+- Placeholders in `<ANGLE_CAPS>`. Never commit secrets, tenant IDs, or real site URLs.
+- PowerShell in ` ```powershell ` blocks.
 
-- **Headings:** exactly one `#` (title); all sections are `##`; sub-sections `###`. Never use `#`
-  for a mid-document section.
-- **Emphasis:** bold key terms and decisions (`**per-user**`, `**not** supported`). Use backticks
-  for identifiers, env vars, file paths, roles, and commands (`` `x-client-user-token` ``,
-  `` `Foundry Agent Consumer` ``).
-- **Diagrams:** architecture/flows use ` ```mermaid ` `flowchart LR` (or `sequenceDiagram`), not ASCII.
-- **Tables** for matrices, role assignments, env vars, and troubleshooting.
-- **Links:** relative markdown links to repo files/folders (`[main.py](path/main.py)`); real doc
-  URLs for Microsoft Learn. Never fabricate links.
-- **Placeholders:** `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-  `<APP_ID>`, `<obo-app-id>`, etc. Never commit real secrets, tenant-specific ids, or tokens.
-- **Commands:** PowerShell in ` ```powershell ` blocks; one action per block; comment non-obvious lines.
+## Accuracy
 
-## Accuracy rules
-
-- Docs must match the **deployed reality** — when code/config changes (agent name, env var, role,
-  header), update every README that references it in the same change.
-- Distinguish **verified** from **preview/unverified**: state what was tested and how (e.g. "verified:
-  admin gets the doc, testuser gets nothing"). Call out preview features and known gaps.
-- Prefer **least-privilege** guidance (scope roles to the agent/project, not the account) and name the
-  exact built-in role. For this repo: **Foundry Agent Consumer** (call agents), **Foundry User** (call
-  models); do **not** recommend `Cognitive Services *` or `Azure AI Developer` for Foundry agents.
-- No marketing tone. Be concise and factual; a customer should be able to act from the doc.
+- Docs must match the deployed code and config. Update every README a change affects.
+- Name exact least-privilege roles: **Foundry Agent Consumer** to call agents, **Foundry User** for
+  model access. Don't recommend `Cognitive Services *` or `Azure AI Developer` roles.
+- No marketing tone.

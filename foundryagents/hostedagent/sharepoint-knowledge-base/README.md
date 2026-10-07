@@ -1,6 +1,7 @@
 # SharePoint knowledge base hosted agent (Foundry IQ)
 
-An Agent Framework **hosted agent** that answers questions from SharePoint through a Foundry IQ
+A Microsoft Agent Framework agent, running on **hosted agents in Foundry Agent Service**, that
+answers questions from SharePoint through a Foundry IQ
 **knowledge base** with a **remote SharePoint knowledge source**, exposed to the agent as a Foundry
 **toolbox**. Retrieval runs **as the signed-in user** through the Copilot Retrieval API, so each
 user only gets content they can already open in SharePoint, published to Teams.
@@ -9,7 +10,7 @@ user only gets content they can already open in SharePoint, published to Teams.
 
 ```mermaid
 flowchart LR
-    U[User in Teams] -->|activity protocol| F[Foundry hosted agent]
+    U[User in Teams] -->|activity protocol| F[Hosted agent]
     F -->|FoundryToolbox, caller context| T[Toolbox sp-kb-tools]
     T -->|connection SpKbUser, UserEntraToken| S[Azure AI Search knowledge base]
     S -->|remote SharePoint knowledge source, as the user| R[Copilot Retrieval API]
@@ -131,7 +132,7 @@ Use the repo script, which points the bot at the agent's own Activity Protocol r
 Tenant scope needs Microsoft 365 admin approval before the agent appears under **Built by your org**.
 On first use each user is asked to sign in to Foundry once.
 
-## Verify per-user identity
+## Verify
 
 Verified in Teams with two users and one SharePoint site that only user A can open. Both asked about
 the same document; both turns called `knowledge_base_retrieve` successfully.
@@ -146,14 +147,12 @@ Pick a document that **user A can open and user B cannot**, then have both ask a
 User B never receives content from a document they can't open, because the Copilot Retrieval API
 runs as user B.
 
-## Next steps
+## Learn more
 
-- [Agent tool support matrix](../../../guides/agent-tool-support-matrix.md) — which tools support per-user identity.
-- [Verify per-user isolation](../../../guides/verify-per-user-isolation.md) — how to prove permission trimming.
-- [Databricks Genie hosted agent](../databricks-agent/README.md) — the same toolbox pattern with an OAuth connection.
-- [Create a remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote) — Microsoft Learn.
-- [Connect a Foundry IQ knowledge base to Foundry Agent Service](https://learn.microsoft.com/azure/foundry/agents/how-to/foundry-iq-connect) — Microsoft Learn.
-- [Toolbox authentication](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication) — Microsoft Learn.
+- [Verify per-user isolation](../../../guides/verify-per-user-isolation.md)
+- [Create a remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote)
+- [Connect a Foundry IQ knowledge base to Foundry Agent Service](https://learn.microsoft.com/azure/foundry/agents/how-to/foundry-iq-connect)
+- [Toolbox authentication](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication)
 
 ## Acknowledgements
 

@@ -1,18 +1,19 @@
 # Databricks Genie hosted agent (OAuth identity passthrough)
 
-An Agent Framework **hosted agent** that answers analytical questions over an Azure Databricks
+A Microsoft Agent Framework agent, running on **hosted agents in Foundry Agent Service**, that
+answers analytical questions over an Azure Databricks
 **Genie** space, reached through a Foundry **toolbox** wrapping the Genie **remote MCP** server.
 The connection uses a custom **OAuth2 identity-passthrough** flow: on first use each signed-in user
 consents to Azure Databricks, and Foundry calls Genie with that user's token.
 
 Each Teams user's Genie queries run under **their own** Databricks identity — see
-[Verify per-user identity](#verify-per-user-identity).
+[Verify](#verify).
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    U[User in Teams] -->|activity protocol| F[Foundry hosted agent]
+    U[User in Teams] -->|activity protocol| F[Hosted agent]
     F -->|FoundryToolbox, caller context| T[Toolbox databricks-tools]
     T -->|connection DatabricksGenie| G[Genie remote MCP]
     G -->|SQL as the signed-in user| W[(Unity Catalog / SQL warehouse)]
@@ -42,7 +43,7 @@ Two details worth knowing:
 5. Permission to create Entra app registrations.
 
 Placeholders used below: `<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<FOUNDRY_ACCOUNT>`, `<PROJECT>`,
-`<DATABRICKS_HOST>`, `<GENIE_SPACE_ID>`.
+`<DATABRICKS_HOST>`, `<GENIE_SPACE_ID>`, `<path-to-repo>`.
 
 ## Deploy
 
@@ -100,7 +101,7 @@ Foundry removes the one-click publish button for projects with private networkin
 script, which points the bot at the agent's own Activity Protocol route — no APIM bridge:
 
 ```powershell
-../../../scripts/Publish-AgentToTeams.ps1 `
+<path-to-repo>/scripts/Publish-AgentToTeams.ps1 `
     -ResourceGroup <RESOURCE_GROUP> -AgentName agent-framework-agent-databricks `
     -ProjectEndpoint https://<FOUNDRY_ACCOUNT>.services.ai.azure.com/api/projects/<PROJECT> `
     -UseM365PublicEndpoint -PublishScope Tenant -AppVersion 1.0.0
@@ -110,7 +111,7 @@ script, which points the bot at the agent's own Activity Protocol route — no A
 source IPs on **only** that route while the account keeps `publicNetworkAccess=Disabled`. Tenant
 scope needs Microsoft 365 admin approval before the agent appears under **Built by your org**.
 
-## Verify per-user identity
+## Verify
 
 Verified with hosted agent + toolbox + OAuth identity passthrough + direct bot endpoint, with
 `publicNetworkAccess` both `Disabled` and `Enabled`.
@@ -127,14 +128,11 @@ Each user is prompted for their **own** Databricks OAuth consent on first use, a
 under their own identity, so Unity Catalog permissions and lineage apply per user. Later sessions
 reuse each user's stored token without prompting again.
 
-## Next steps
+## Learn more
 
-- [Agent tool support matrix](../../../guides/agent-tool-support-matrix.md) — which tools support per-user identity.
-- [Verify per-user isolation](../../../guides/verify-per-user-isolation.md) — how to prove permission trimming.
-- [SharePoint Copilot retrieval sample](../sharepoint-copilot-retrieval/README.md) — the same passthrough pattern against a custom MCP server.
-- [Publish to a virtual network](https://learn.microsoft.com/azure/foundry/agents/how-to/publish-copilot-virtual-network) — Microsoft Learn.
-- [Toolbox authentication](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication) — Microsoft Learn.
-- [Microsoft Foundry Toolbox (`FoundryToolbox`)](https://learn.microsoft.com/agent-framework/integrations/by-component/tools/foundry-toolbox) — Agent Framework docs.
+- [Verify per-user isolation](../../../guides/verify-per-user-isolation.md)
+- [Toolbox authentication](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication)
+- [Microsoft Foundry Toolbox (`FoundryToolbox`)](https://learn.microsoft.com/agent-framework/integrations/by-component/tools/foundry-toolbox)
 
 ## Acknowledgements
 

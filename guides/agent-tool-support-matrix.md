@@ -11,35 +11,26 @@ deployment configuration.
 The matrix describes route capabilities and constraints, not production certification. The native
 SharePoint, Work IQ, and MCP integrations include preview features.
 
-| # | Tool / route | Backed by | Prompt Agent | Hosted Agent | Teams Publishing | Per-user (trimmed) | Scoping | Licensing | Docs | Repo sample |
+| # | Tool / route | Backed by | Prompt agent | Hosted agent | Teams publishing | Per-user (trimmed) | Scoping | Licensing | Docs | Repo sample |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | No — a deployed container has no user token(Read note below) | Yes | Yes | Site/folder | Copilot license or Retrieval API paygo | [SharePoint tool](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint) | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
+| 1 | SharePoint grounding tool (`sharepoint_grounding_preview`) | Copilot Retrieval API | Yes | No — a deployed container has no user token (see note) | Yes | Yes | Site/folder | Copilot license or Retrieval API paygo | [SharePoint tool](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/sharepoint) | [Prompt sample](../foundryagents/promptagent/sharepoint-agent-grounding-tool/README.md) |
 | 2 | Work IQ (`work_iq_preview`) | Work IQ over M365 | Yes | Yes | Yes | Yes | Broad M365, no per-site filter | Work IQ API paygo; connector licensing differs | [Work IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq) | [Work IQ sample](../foundryagents/hostedagent/sharepoint-agent-workiq/README.md) |
 | 3 | SharePoint retrieval: Toolbox + OBO MCP server (**custom setup, superseded by option 4**) | Copilot Retrieval API | MCP integration possible; Not in this repository | Yes | Yes | Yes | Site/path in sample | Copilot license or Retrieval API paygo | [Toolbox](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/use-toolbox-hosted-agent) · [MCP](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol) · [Retrieval API](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/ai-services/retrieval/overview) | [SharePoint retrieval](../foundryagents/hostedagent/sharepoint-copilot-retrieval/README.md) |
 | 4 | SharePoint knowledge base: Toolbox + Foundry IQ remote SharePoint knowledge source (**recommended**) | Azure AI Search knowledge base over the Copilot Retrieval API | Supported through Foundry IQ; Not in this repository | Yes | Yes | Yes | Site/path filter on the knowledge source | Copilot license per user, plus Azure AI Search | [Remote SharePoint knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-sharepoint-remote) · [Foundry IQ](https://learn.microsoft.com/azure/foundry/agents/how-to/foundry-iq-connect) · [Toolbox auth](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/tool-authentication) | [SharePoint knowledge base](../foundryagents/hostedagent/sharepoint-knowledge-base/README.md) |
 
 
-**Note** : Why a deployed hosted agent can't use sharepoint_grounding_tool. The tool's grounding runs through OBO, which needs a user assertion to exchange. The docs' hosted-agent sample
-supplies one via AzureCliCredential — it runs on your machine as you. Deploy that same code and the
-credential becomes the container's own agent identity, so there is no user to act for and the call
-fails with "AppOnly OBO tokens not supported." Options 2, 3 and 4 survive deployment because the user
-arrives through the connection rather than the container's credential — through the consent flow in
-options 2 and 3, and through the caller's own Entra token (`UserEntraToken`) in option 4. Option 3 was
-built to overcome the limitations of sharepoint_grounding_tool and get site-scoped Retrieval API
-results into a deployed, Teams-published agent; option 4 gets the same result with no server of your own.
+**Note:** the SharePoint grounding tool needs a user token to exchange. Run locally, it uses your
+`az login` identity. Deployed, the container has only its own agent identity, so the call fails with
+"AppOnly OBO tokens not supported". Options 2–4 work when deployed because the user's identity
+arrives through the connection instead.
 
 **Option 3 vs option 4.** Option 3 is a **custom setup**: you build, host and operate your own OBO MCP
-server. Option 4 supersedes it using built-in Foundry IQ components, and is the route recommended by
+server. Option 4 supersedes it with built-in Foundry IQ components and is the route recommended by
 the Microsoft Foundry product team. It is in preview with general availability expected; prefer it
-for new work, and treat option 3 as a reference for cases option 4 can't yet cover.
+for new work.
 
-
-Publishing is the same for all four — the Foundry-managed bot via
-[`scripts/Publish-AgentToTeams.ps1`](../scripts/Publish-AgentToTeams.ps1), prompt agents included.
-
-A successful answer never proves trimming; verify the downstream caller identity yourself. These
-samples configure a site `path` filter only; file-type or date filtering is an implementation change,
-not a sample setting.
+Publishing is the same for all four, through
+[Publish-AgentToTeams.ps1](../scripts/Publish-AgentToTeams.ps1).
 
 ## Pros / cons
 
@@ -59,9 +50,7 @@ not a sample setting.
 - Use **Foundry Agent Consumer** for invocation at the narrowest supported agent/project scope and **Foundry User** for the agent identity's model calls at project scope. Do not assume tenant publishing or `BotServiceRbac` removes caller authorization requirements.
 - Retrieval API pay-as-you-go requires at least one Microsoft 365 Copilot license in the tenant. Work IQ billing and SharePoint-agent billing do not automatically entitle the raw Retrieval API.
 
-## Customer validation
+## Verify
 
-Complete the [two-user checklist](verify-per-user-isolation.md)
-with a known document, a user who can read it, and a user who cannot. Compare authenticated tool
-identities and raw retrieval outcomes in separate sessions; do not use a model answer or blocked
-citation link as proof of permission trimming. Repeat for each connection and target network posture.
+Run the [two-user checklist](verify-per-user-isolation.md) for the route you choose. A successful
+answer alone does not prove permission trimming.

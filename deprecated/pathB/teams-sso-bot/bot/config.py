@@ -20,7 +20,7 @@ class Config:
     APP_TENANT_ID = os.environ.get("MicrosoftAppTenantId", "")
 
     # Name of the Bot Service OAuth Connection Setting that does Teams SSO. Its AAD app must be
-    # configured for silent SSO (see scripts/Configure-TeamsSso-App.ps1) and expose access_as_user.
+    # configured for silent SSO (see ../scripts/Configure-TeamsSso-App.ps1) and expose access_as_user.
     # The token it returns has audience = that SSO/OBO app — exactly the assertion the hosted agent
     # needs for its On-Behalf-Of exchange to Microsoft Graph.
     OAUTH_CONNECTION_NAME = os.environ.get("OAUTH_CONNECTION_NAME", "teams-sso")

@@ -69,7 +69,7 @@ Provide `BOT_CLIENT_SECRET` through a secure local environment variable, not lit
 From the repository root, configure the shared app's Teams SSO resource and preauthorized clients:
 
 ```powershell
-./scripts/Configure-TeamsSso-App.ps1 -AppId <APP_ID> -AdminConsent
+./deprecated/pathB/teams-sso-bot/scripts/Configure-TeamsSso-App.ps1 -AppId <APP_ID> -AdminConsent
 ```
 
 Separately grant the Graph delegated permissions listed above and admin consent. Configure the
