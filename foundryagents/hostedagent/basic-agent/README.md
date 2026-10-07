@@ -1,7 +1,8 @@
 # Basic agent
 
-A minimal **Agent Framework** hosted agent with no tools or connections. Deploy it and publish it to
-Microsoft Teams to confirm the end-to-end path works before you add tools.
+A minimal **Microsoft Agent Framework** agent with no tools or connections, running on **hosted
+agents in Foundry Agent Service**. Deploy it and publish it to Microsoft Teams to confirm the
+end-to-end path works before you add tools.
 
 ## How it works
 

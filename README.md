@@ -8,7 +8,7 @@ channel traffic natively, so **no gateway, proxy, or API Management bridge is re
 
 | Sample | What it shows |
 | --- | --- |
-| [Basic agent](foundryagents/hostedagent/basic-agent/README.md) | Minimal hosted agent with no tools. **Start here.** |
+| [Basic agent](foundryagents/hostedagent/basic-agent/README.md) | Minimal agent with no tools, running on hosted agents in Foundry Agent Service. **Start here.** |
 | [SharePoint knowledge base](foundryagents/hostedagent/sharepoint-knowledge-base/README.md) | Per-user SharePoint through a Foundry IQ knowledge base. **Recommended** SharePoint route. |
 | [Databricks Genie](foundryagents/hostedagent/databricks-agent/README.md) | Per-user Databricks data through the managed Genie MCP server, enforced by Unity Catalog. |
 | [Work IQ](foundryagents/hostedagent/sharepoint-agent-workiq/README.md) | Broad Microsoft 365 grounding through the Microsoft-hosted Work IQ MCP server. |

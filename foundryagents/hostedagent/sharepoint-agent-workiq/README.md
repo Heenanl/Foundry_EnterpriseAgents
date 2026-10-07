@@ -1,8 +1,8 @@
 # SharePoint agent with Work IQ
 
-A hosted agent that grounds answers in **SharePoint and other Microsoft 365 content as the signed-in
-user** through the Microsoft-hosted **Work IQ** MCP server, published to Teams on the Foundry-managed
-bot.
+An agent on **hosted agents in Foundry Agent Service** that grounds answers in **SharePoint and other
+Microsoft 365 content as the signed-in user** through the Microsoft-hosted **Work IQ** MCP server,
+published to Teams on the Foundry-managed bot.
 
 ## How it works
 

@@ -4,7 +4,8 @@
 > This is a **custom setup** that you host and maintain. For new work, use the
 > [SharePoint knowledge base](../sharepoint-knowledge-base/README.md) sample, the recommended route.
 
-A hosted agent that answers from **one or more SharePoint sites as the signed-in user**, through this
+An agent on **hosted agents in Foundry Agent Service** that answers from **one or more SharePoint
+sites as the signed-in user**, through this
 repo's [OBO MCP server](obo-mcp-server/README.md) and the **Microsoft 365 Copilot Retrieval API**.
 Published to Teams on the Foundry-managed bot.
 

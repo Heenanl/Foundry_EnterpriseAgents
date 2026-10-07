@@ -1,6 +1,7 @@
 # Databricks Genie hosted agent (OAuth identity passthrough)
 
-An Agent Framework **hosted agent** that answers analytical questions over an Azure Databricks
+A Microsoft Agent Framework agent, running on **hosted agents in Foundry Agent Service**, that
+answers analytical questions over an Azure Databricks
 **Genie** space, reached through a Foundry **toolbox** wrapping the Genie **remote MCP** server.
 The connection uses a custom **OAuth2 identity-passthrough** flow: on first use each signed-in user
 consents to Azure Databricks, and Foundry calls Genie with that user's token.
@@ -12,7 +13,7 @@ Each Teams user's Genie queries run under **their own** Databricks identity — 
 
 ```mermaid
 flowchart LR
-    U[User in Teams] -->|activity protocol| F[Foundry hosted agent]
+    U[User in Teams] -->|activity protocol| F[Hosted agent]
     F -->|FoundryToolbox, caller context| T[Toolbox databricks-tools]
     T -->|connection DatabricksGenie| G[Genie remote MCP]
     G -->|SQL as the signed-in user| W[(Unity Catalog / SQL warehouse)]

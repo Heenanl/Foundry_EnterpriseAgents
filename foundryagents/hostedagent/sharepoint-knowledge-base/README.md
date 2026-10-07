@@ -1,6 +1,7 @@
 # SharePoint knowledge base hosted agent (Foundry IQ)
 
-An Agent Framework **hosted agent** that answers questions from SharePoint through a Foundry IQ
+A Microsoft Agent Framework agent, running on **hosted agents in Foundry Agent Service**, that
+answers questions from SharePoint through a Foundry IQ
 **knowledge base** with a **remote SharePoint knowledge source**, exposed to the agent as a Foundry
 **toolbox**. Retrieval runs **as the signed-in user** through the Copilot Retrieval API, so each
 user only gets content they can already open in SharePoint, published to Teams.
@@ -9,7 +10,7 @@ user only gets content they can already open in SharePoint, published to Teams.
 
 ```mermaid
 flowchart LR
-    U[User in Teams] -->|activity protocol| F[Foundry hosted agent]
+    U[User in Teams] -->|activity protocol| F[Hosted agent]
     F -->|FoundryToolbox, caller context| T[Toolbox sp-kb-tools]
     T -->|connection SpKbUser, UserEntraToken| S[Azure AI Search knowledge base]
     S -->|remote SharePoint knowledge source, as the user| R[Copilot Retrieval API]
